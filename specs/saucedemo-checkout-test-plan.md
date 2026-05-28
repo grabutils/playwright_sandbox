@@ -1,515 +1,378 @@
-# Test Plan: SCRUM-101 — Saucedemo E-commerce Checkout Process
-
-**Application URL**: https://www.saucedemo.com  
-**Test Credentials**: username: `standard_user` | password: `secret_sauce`  
-**Seed File**: `tests/seed.spec.ts`  
-**Test Scripts Directory**: `tests/saucedemo-checkout/`  
-**Browsers**: Chromium, Firefox, WebKit (Safari)  
-**Created**: 2026-05-28  
+# Saucedemo Checkout Workflow — Test Plan
+**SCRUM-101 | Checkout Flow QA**
 
 ---
 
-## Application Overview (Exploratory Findings)
+## Overview
 
-SauceDemo is a demo e-commerce site with the following page flow:
+**Application Under Test:** https://www.saucedemo.com
+**Feature:** End-to-end checkout workflow
+**Test Credentials:** username: `standard_user` | password: `secret_sauce`
+**Date Created:** 2026-05-28
+**Coverage:** AC1 (Cart Review), AC2 (Checkout Info), AC3 (Order Overview), AC4 (Order Completion), AC5 (Error Handling)
 
-| Page | URL | Purpose |
-|------|-----|---------|
-| Login | `/` | User authentication |
-| Products | `/inventory.html` | Product catalog |
-| Cart | `/cart.html` | Shopping cart review |
-| Checkout Step 1 | `/checkout-step-one.html` | Customer info entry |
-| Checkout Step 2 | `/checkout-step-two.html` | Order overview |
-| Checkout Complete | `/checkout-complete.html` | Order confirmation |
+---
 
-### Key Element Selectors (Discovered During Exploration)
+## URLs and Selectors Reference
 
-| Element | Selector |
-|---------|----------|
-| Username field | `#user-name` |
-| Password field | `#password` |
+| Page | URL |
+|------|-----|
+| Login | `https://www.saucedemo.com/` |
+| Products / Inventory | `https://www.saucedemo.com/inventory.html` |
+| Cart | `https://www.saucedemo.com/cart.html` |
+| Checkout Step 1 (Info) | `https://www.saucedemo.com/checkout-step-one.html` |
+| Checkout Step 2 (Overview) | `https://www.saucedemo.com/checkout-step-two.html` |
+| Order Complete | `https://www.saucedemo.com/checkout-complete.html` |
+
+| Element | Selector / data-test ID |
+|---------|------------------------|
+| Username input | `#user-name` |
+| Password input | `#password` |
 | Login button | `#login-button` |
-| Login error | `[data-test="error"]` |
-| Add to cart (backpack) | `[data-test="add-to-cart-sauce-labs-backpack"]` |
-| Cart link | `.shopping_cart_link` |
+| Add to cart (Backpack) | `#add-to-cart-sauce-labs-backpack` |
+| Add to cart (Bike Light) | `#add-to-cart-sauce-labs-bike-light` |
+| Cart icon | `#shopping_cart_container` |
 | Cart badge | `.shopping_cart_badge` |
-| Cart items | `.cart_item` |
 | Continue Shopping | `#continue-shopping` |
 | Checkout button | `#checkout` |
-| First name field | `#first-name` |
-| Last name field | `#last-name` |
-| Postal code field | `#postal-code` |
+| First Name input | `#first-name` |
+| Last Name input | `#last-name` |
+| Zip/Postal Code input | `#postal-code` |
 | Continue button | `#continue` |
 | Cancel button | `#cancel` |
-| Checkout error | `[data-test="error"]` |
-| Subtotal | `.summary_subtotal_label` |
-| Tax | `.summary_tax_label` |
-| Total | `.summary_total_label` |
+| Error message container | `[data-test="error"]` |
 | Finish button | `#finish` |
-| Order confirmation header | `.complete-header` |
-| Back to products | `#back-to-products` |
+| Back Home button | `#back-to-products` |
+| Item name in cart | `.inventory_item_name` |
+| Item description | `.inventory_item_desc` |
+| Item price | `.inventory_item_price` |
+| Item quantity | `.cart_quantity` |
+| Subtotal label | `.summary_subtotal_label` |
+| Tax label | `.summary_tax_label` |
+| Total label | `.summary_total_label` |
+| Payment info | `.summary_value_label` (first) |
+| Shipping info | `.summary_value_label` (second) |
+| Complete header | `.complete-header` |
+| Complete text | `.complete-text` |
 
 ---
 
-## Test Scenarios
+## Test Cases
 
 ---
 
-### 1. Cart Review (AC1)
+### TC-001 — Happy Path: Single Item Checkout End-to-End
 
-**Seed**: Login as `standard_user`, add at least one item to cart
+**Acceptance Criteria:** AC1, AC2, AC3, AC4
+**Priority:** Critical
 
-#### 1.1 should display product details (name, description, price, quantity)
+**Preconditions:**
+- Browser is open with a fresh/blank session (no prior login, no cookies)
+- Application is accessible at https://www.saucedemo.com
 
-**Steps**:
-1. Navigate to `https://www.saucedemo.com`
-2. Login with `standard_user` / `secret_sauce`
-3. Click "Add to cart" on "Sauce Labs Backpack"
-4. Click cart icon (`.shopping_cart_link`)
-5. Verify the cart page is shown (`/cart.html`)
-6. Verify item name is visible (`.inventory_item_name`)
-7. Verify item description is visible (`.inventory_item_desc`)
-8. Verify item price is visible (`.inventory_item_price`)
-9. Verify quantity shows `1` (`.cart_quantity`)
+**Test Data:**
+- Username: `standard_user`
+- Password: `secret_sauce`
+- First Name: `John`
+- Last Name: `Doe`
+- Zip/Postal Code: `12345`
+- Product: Sauce Labs Backpack ($29.99)
 
-**Expected**: All item details are shown correctly with quantity 1
+**Steps:**
 
----
-
-#### 1.2 should show Continue Shopping button
-
-**Steps**:
-1. Navigate to cart (after login + add item)
-2. Verify `#continue-shopping` button is visible and enabled
-
-**Expected**: "Continue Shopping" button is visible
-
----
-
-#### 1.3 should show Proceed to Checkout button
-
-**Steps**:
-1. Navigate to cart (after login + add item)
-2. Verify `#checkout` button is visible and enabled
-
-**Expected**: "Checkout" button is visible
-
----
-
-#### 1.4 should navigate back to products when Continue Shopping is clicked
-
-**Steps**:
-1. Navigate to cart page
-2. Click `#continue-shopping`
-3. Verify URL contains `/inventory.html`
-4. Verify "Products" heading is visible
-
-**Expected**: User is returned to the products page
+| Step | Action | Expected Result |
+|------|--------|----------------|
+| 1 | Navigate to `https://www.saucedemo.com` | Login page is displayed with username field, password field, and login button |
+| 2 | Enter `standard_user` in the Username field | Text is entered in the field |
+| 3 | Enter `secret_sauce` in the Password field | Password is masked/hidden |
+| 4 | Click the Login button | User is redirected to `https://www.saucedemo.com/inventory.html`; product catalog is displayed |
+| 5 | Click "Add to cart" next to "Sauce Labs Backpack" | Button changes to "Remove"; cart badge in top-right shows `1` |
+| 6 | Click the cart icon in the top-right corner | User is redirected to `https://www.saucedemo.com/cart.html` |
+| 7 | Verify cart contents | Sauce Labs Backpack is listed with: correct name, description, price ($29.99), quantity (1) |
+| 8 | Click the "Checkout" button | User is redirected to `https://www.saucedemo.com/checkout-step-one.html`; form with First Name, Last Name, Zip/Postal Code fields is displayed |
+| 9 | Enter `John` in First Name field | Text appears in field |
+| 10 | Enter `Doe` in Last Name field | Text appears in field |
+| 11 | Enter `12345` in Zip/Postal Code field | Text appears in field |
+| 12 | Click "Continue" | User is redirected to `https://www.saucedemo.com/checkout-step-two.html`; order overview is displayed |
+| 13 | Verify overview shows: item name, item price, payment info, shipping info, subtotal, tax, total | All items and totals are visible; subtotal = $29.99; total = subtotal + tax |
+| 14 | Click the "Finish" button | User is redirected to `https://www.saucedemo.com/checkout-complete.html` |
+| 15 | Verify success message | Header reads "Thank you for your order!"; confirmation text is displayed |
+| 16 | Verify "Back Home" button is visible | Button labeled "Back Home" is present on the page |
 
 ---
 
-#### 1.5 should proceed to checkout information when Checkout is clicked
+### TC-002 — Cart Review: Multiple Items Display
 
-**Steps**:
-1. Navigate to cart page with items
-2. Click `#checkout`
-3. Verify URL contains `/checkout-step-one.html`
+**Acceptance Criteria:** AC1
+**Priority:** High
 
-**Expected**: User is redirected to checkout information page
+**Preconditions:**
+- Fresh browser session
 
----
+**Test Data:**
+- Username: `standard_user`, Password: `secret_sauce`
+- Products: Sauce Labs Backpack ($29.99), Sauce Labs Bike Light ($9.99)
 
-#### 1.6 should show cart badge with correct item count
+**Steps:**
 
-**Steps**:
-1. Login and navigate to products
-2. Click "Add to cart" on one item
-3. Verify `.shopping_cart_badge` shows `1`
-4. Add another item
-5. Verify badge shows `2`
-
-**Expected**: Badge accurately reflects item count
-
----
-
-#### 1.7 should show multiple items in cart
-
-**Steps**:
-1. Login and navigate to products
-2. Add "Sauce Labs Backpack" and "Sauce Labs Bike Light"
-3. Navigate to cart
-4. Verify `.cart_item` count is 2
-
-**Expected**: Both items appear in the cart
+| Step | Action | Expected Result |
+|------|--------|----------------|
+| 1 | Log in with `standard_user` / `secret_sauce` | User is on the inventory page |
+| 2 | Click "Add to cart" next to "Sauce Labs Backpack" | Cart badge shows `1` |
+| 3 | Click "Add to cart" next to "Sauce Labs Bike Light" | Cart badge shows `2` |
+| 4 | Click the cart icon | User is on `https://www.saucedemo.com/cart.html` |
+| 5 | Verify both items are listed with name, description, price, quantity | Both items display correctly |
+| 6 | Verify "Continue Shopping" and "Checkout" buttons are present | Both buttons visible |
+| 7 | Click "Continue Shopping" | User returns to `/inventory.html`; cart badge still shows `2` |
 
 ---
 
-#### 1.8 should remove item when delete icon is clicked
+### TC-003 — Checkout Form Validation: Empty First Name
 
-**Steps**:
-1. Navigate to cart with one item
-2. Click `[data-test="remove-sauce-labs-backpack"]`
-3. Verify `.cart_item` count is 0
-4. Verify `.shopping_cart_badge` is not visible
+**Acceptance Criteria:** AC2, AC5
+**Priority:** High
 
-**Expected**: Item removed, cart is empty, badge disappears
+**Test Data:** Leave First Name empty; Last Name = `Doe`; Zip = `12345`
 
----
+**Steps:**
 
-### 2. Checkout Information (AC2)
-
-**Seed**: Login, add item to cart, click Checkout
-
-#### 2.1 should display form fields for First Name, Last Name, and Zip Code
-
-**Steps**:
-1. Login, add item, go to cart, click Checkout
-2. Verify `#first-name` field is visible
-3. Verify `#last-name` field is visible
-4. Verify `#postal-code` field is visible
-5. Verify `#continue` button is visible
-6. Verify `#cancel` button is visible
-
-**Expected**: All form fields and buttons are displayed
+| Step | Action | Expected Result |
+|------|--------|----------------|
+| 1 | Log in, add Sauce Labs Backpack to cart, navigate to checkout info | On `/checkout-step-one.html` |
+| 2 | Leave First Name empty; enter `Doe` / `12345` | Only Last Name and Zip filled |
+| 3 | Click "Continue" | Error message: "Error: First Name is required"; URL unchanged |
 
 ---
 
-#### 2.2 should proceed to order overview when all fields are filled
+### TC-004 — Checkout Form Validation: Empty Last Name
 
-**Steps**:
-1. On checkout info page, fill `#first-name` with "John"
-2. Fill `#last-name` with "Doe"
-3. Fill `#postal-code` with "12345"
-4. Click `#continue`
-5. Verify URL contains `/checkout-step-two.html`
+**Acceptance Criteria:** AC2, AC5
+**Priority:** High
 
-**Expected**: User is redirected to order overview page
+**Test Data:** First Name = `John`; leave Last Name empty; Zip = `12345`
 
----
+**Steps:**
 
-#### 2.3 should show error when First Name is empty
-
-**Steps**:
-1. On checkout info page, leave `#first-name` empty
-2. Fill `#last-name` with "Doe"
-3. Fill `#postal-code` with "12345"
-4. Click `#continue`
-5. Verify `[data-test="error"]` is visible and contains "First Name is required"
-
-**Expected**: Error message displayed for missing first name
+| Step | Action | Expected Result |
+|------|--------|----------------|
+| 1 | Log in, add item, navigate to checkout info | On `/checkout-step-one.html` |
+| 2 | Enter `John`, leave Last Name empty, enter `12345` | Only First Name and Zip filled |
+| 3 | Click "Continue" | Error message: "Error: Last Name is required"; URL unchanged |
 
 ---
 
-#### 2.4 should show error when Last Name is empty
+### TC-005 — Checkout Form Validation: Empty Zip/Postal Code
 
-**Steps**:
-1. On checkout info page, fill `#first-name` with "John"
-2. Leave `#last-name` empty
-3. Fill `#postal-code` with "12345"
-4. Click `#continue`
-5. Verify error contains "Last Name is required"
+**Acceptance Criteria:** AC2, AC5
+**Priority:** High
 
-**Expected**: Error message displayed for missing last name
+**Test Data:** First Name = `John`; Last Name = `Doe`; leave Zip empty
 
----
+**Steps:**
 
-#### 2.5 should show error when Zip Code is empty
-
-**Steps**:
-1. On checkout info page, fill `#first-name` with "John"
-2. Fill `#last-name` with "Doe"
-3. Leave `#postal-code` empty
-4. Click `#continue`
-5. Verify error contains "Postal Code is required"
-
-**Expected**: Error message displayed for missing postal code
+| Step | Action | Expected Result |
+|------|--------|----------------|
+| 1 | Log in, add item, navigate to checkout info | On `/checkout-step-one.html` |
+| 2 | Enter `John` / `Doe`; leave Zip empty | Only First Name and Last Name filled |
+| 3 | Click "Continue" | Error message: "Error: Postal Code is required"; URL unchanged |
 
 ---
 
-#### 2.6 should show error when all fields are empty
+### TC-006 — Checkout Form Validation: All Fields Empty
 
-**Steps**:
-1. On checkout info page, leave all fields empty
-2. Click `#continue`
-3. Verify `[data-test="error"]` is visible
+**Acceptance Criteria:** AC2, AC5
+**Priority:** High
 
-**Expected**: Validation error is displayed
+**Steps:**
 
----
-
-#### 2.7 should cancel checkout and return to cart
-
-**Steps**:
-1. On checkout info page
-2. Click `#cancel`
-3. Verify URL contains `/cart.html`
-
-**Expected**: User is returned to the cart page
+| Step | Action | Expected Result |
+|------|--------|----------------|
+| 1 | Log in, add item, navigate to checkout info | On `/checkout-step-one.html` |
+| 2 | Leave all fields empty | All fields blank |
+| 3 | Click "Continue" | Validation error shown; URL unchanged |
 
 ---
 
-#### 2.8 should dismiss error message when X is clicked
+### TC-007 — Order Overview: Verify All Details
 
-**Steps**:
-1. Trigger an error (click Continue with empty fields)
-2. Click the `.error-button` (X icon on error message)
-3. Verify error message is no longer visible
+**Acceptance Criteria:** AC3
+**Priority:** High
 
-**Expected**: Error message is dismissed
+**Test Data:** Both Backpack ($29.99) and Bike Light ($9.99); First Name = `John`, Last Name = `Doe`, Zip = `12345`
 
----
+**Steps:**
 
-### 3. Order Overview (AC3)
-
-**Seed**: Login, add item, checkout, fill info and continue
-
-#### 3.1 should show summary of all ordered items
-
-**Steps**:
-1. Complete checkout info, arrive at `/checkout-step-two.html`
-2. Verify `.cart_item` is visible with item name and price
-3. Verify each ordered item is listed
-
-**Expected**: All cart items are shown in the overview
+| Step | Action | Expected Result |
+|------|--------|----------------|
+| 1 | Log in, add both products, navigate to checkout overview | On `/checkout-step-two.html` |
+| 2 | Verify both items listed with prices | Backpack $29.99, Bike Light $9.99 shown |
+| 3 | Verify payment and shipping info sections | Both sections present |
+| 4 | Verify subtotal = `Item total: $39.98` | Correct sum |
+| 5 | Verify tax is shown | Tax value displayed |
+| 6 | Verify total = `Total: $43.18` | Subtotal + tax |
+| 7 | Verify Cancel and Finish buttons are present | Both visible |
 
 ---
 
-#### 3.2 should display payment information
+### TC-008 — Cancel Checkout from Overview Page
 
-**Steps**:
-1. On checkout overview page
-2. Verify "Payment Information:" label is visible
-3. Verify payment details are shown
+**Acceptance Criteria:** AC3
+**Priority:** Medium
 
-**Expected**: Payment information section is visible
+**Steps:**
 
----
-
-#### 3.3 should display shipping information
-
-**Steps**:
-1. On checkout overview page
-2. Verify "Shipping Information:" label is visible
-
-**Expected**: Shipping information section is visible
+| Step | Action | Expected Result |
+|------|--------|----------------|
+| 1 | Reach checkout overview page with one item | On `/checkout-step-two.html` |
+| 2 | Click "Cancel" | Redirected to `/inventory.html` |
+| 3 | Verify cart still has the item | Cart badge shows `1` |
 
 ---
 
-#### 3.4 should show subtotal, tax, and total amounts
+### TC-009 — Order Completion Confirmation
 
-**Steps**:
-1. On checkout overview page
-2. Verify `.summary_subtotal_label` is visible and contains a dollar amount
-3. Verify `.summary_tax_label` is visible and contains a dollar amount
-4. Verify `.summary_total_label` is visible and contains a dollar amount
+**Acceptance Criteria:** AC4
+**Priority:** Critical
 
-**Expected**: All price breakdowns are displayed
+**Steps:**
 
----
-
-#### 3.5 should have Cancel and Finish buttons
-
-**Steps**:
-1. On checkout overview page
-2. Verify `#finish` button is visible
-3. Verify `#cancel` button is visible
-
-**Expected**: Both action buttons are present
+| Step | Action | Expected Result |
+|------|--------|----------------|
+| 1 | Complete checkout through overview page | On `/checkout-step-two.html` |
+| 2 | Click "Finish" | Redirected to `/checkout-complete.html` |
+| 3 | Verify heading "Thank you for your order!" | Success heading present |
+| 4 | Verify confirmation text and image | Dispatch confirmation text visible |
+| 5 | Verify "Back Home" button is present | Button visible |
 
 ---
 
-#### 3.6 should navigate to products when Cancel is clicked
+### TC-010 — Back Home Button Navigation After Order Completion
 
-**Steps**:
-1. On checkout overview page, click `#cancel`
-2. Verify URL contains `/inventory.html`
+**Acceptance Criteria:** AC4
+**Priority:** High
 
-**Expected**: User is returned to the products page (SauceDemo behavior)
+**Steps:**
 
----
-
-#### 3.7 should have correct total (subtotal + tax)
-
-**Steps**:
-1. On checkout overview page
-2. Read subtotal value from `.summary_subtotal_label`
-3. Read tax value from `.summary_tax_label`
-4. Read total value from `.summary_total_label`
-5. Verify: total = subtotal + tax (within rounding tolerance)
-
-**Expected**: Total amount is accurate sum of subtotal and tax
+| Step | Action | Expected Result |
+|------|--------|----------------|
+| 1 | Complete full checkout, land on `/checkout-complete.html` | Success page shown |
+| 2 | Click "Back Home" | Redirected to `/inventory.html` |
+| 3 | Verify cart is empty | Cart badge not displayed |
 
 ---
 
-### 4. Order Completion (AC4)
+### TC-011 — Checkout with Special Characters in Form Fields
 
-**Seed**: Complete entire checkout flow including clicking Finish
+**Acceptance Criteria:** AC2, AC5
+**Priority:** Medium
 
-#### 4.1 should redirect to confirmation page after clicking Finish
+**Test Data:** First Name = `José`, Last Name = `O'Brien`, Zip = `SW1A 1AA`
 
-**Steps**:
-1. On checkout overview, click `#finish`
-2. Verify URL contains `/checkout-complete.html`
+**Steps:**
 
-**Expected**: User lands on order confirmation page
-
----
-
-#### 4.2 should show success message "Thank you for your order!"
-
-**Steps**:
-1. On order confirmation page
-2. Verify `.complete-header` contains "Thank you for your order!"
-
-**Expected**: Success header is displayed
+| Step | Action | Expected Result |
+|------|--------|----------------|
+| 1 | Log in, add item, navigate to checkout info | On `/checkout-step-one.html` |
+| 2 | Enter special character data in all fields | Characters accepted and displayed |
+| 3 | Click "Continue" | Redirected to overview without errors |
+| 4 | Click "Finish" | Order completes successfully |
 
 ---
 
-#### 4.3 should show order confirmation descriptive text
+### TC-012 — URL Verification at Each Checkout Step
 
-**Steps**:
-1. On order confirmation page
-2. Verify `.complete-text` is visible with meaningful text
+**Acceptance Criteria:** AC1, AC2, AC3, AC4
+**Priority:** Medium
 
-**Expected**: Descriptive confirmation text is visible
+**Steps:**
 
----
-
-#### 4.4 should show Back Home button
-
-**Steps**:
-1. On order confirmation page
-2. Verify `#back-to-products` button is visible
-
-**Expected**: "Back Home" button is displayed
-
----
-
-#### 4.5 should navigate to products when Back Home is clicked
-
-**Steps**:
-1. On order confirmation page, click `#back-to-products`
-2. Verify URL contains `/inventory.html`
-3. Verify "Products" heading is visible
-
-**Expected**: User returns to the products page
+| Step | Action | Expected URL |
+|------|--------|-------------|
+| 1 | Navigate to app | `/` |
+| 2 | Log in | `/inventory.html` |
+| 3 | Click cart icon | `/cart.html` |
+| 4 | Click Checkout | `/checkout-step-one.html` |
+| 5 | Fill form and click Continue | `/checkout-step-two.html` |
+| 6 | Click Finish | `/checkout-complete.html` |
+| 7 | Click Back Home | `/inventory.html` |
 
 ---
 
-#### 4.6 cart should be empty after order completion
+### TC-013 — Cancel Checkout from Info Form Page
 
-**Steps**:
-1. After clicking "Back Home" from order confirmation
-2. Verify `.shopping_cart_badge` is not visible (cart is empty)
+**Acceptance Criteria:** AC2
+**Priority:** Medium
 
-**Expected**: Cart is cleared after successful order
+**Steps:**
 
----
-
-### 5. Error Handling (AC5)
-
-#### 5.1 should show error for empty login credentials
-
-**Steps**:
-1. Navigate to `https://www.saucedemo.com`
-2. Leave username and password empty
-3. Click `#login-button`
-4. Verify `[data-test="error"]` is visible with message about required username
-
-**Expected**: Login error is displayed
+| Step | Action | Expected Result |
+|------|--------|----------------|
+| 1 | Navigate to checkout info page with item in cart | On `/checkout-step-one.html` |
+| 2 | Click "Cancel" | Redirected to `/cart.html`; item still in cart |
 
 ---
 
-#### 5.2 should show error for incorrect password
+### TC-014 — Remove Item from Cart Before Checkout
 
-**Steps**:
-1. Navigate to login page
-2. Enter `standard_user` as username
-3. Enter `wrong_password` as password
-4. Click `#login-button`
-5. Verify error message is visible
+**Acceptance Criteria:** AC1
+**Priority:** Medium
 
-**Expected**: Authentication error is displayed
+**Steps:**
 
----
-
-#### 5.3 should show error for locked out user
-
-**Steps**:
-1. Navigate to login page
-2. Enter `locked_out_user` as username
-3. Enter `secret_sauce` as password
-4. Click `#login-button`
-5. Verify error contains "Sorry, this user has been locked out."
-
-**Expected**: Locked-out user error message is shown
+| Step | Action | Expected Result |
+|------|--------|----------------|
+| 1 | Log in, add Backpack and Bike Light to cart | Badge shows `2` |
+| 2 | On cart page, click "Remove" next to Bike Light | Only Backpack remains; badge shows `1` |
+| 3 | Complete checkout | Overview shows only Backpack; subtotal = $29.99 |
 
 ---
 
-#### 5.4 should not allow proceeding with empty cart
+### TC-015 — Happy Path: Multiple Items Checkout End-to-End
 
-**Steps**:
-1. Login as `standard_user`
-2. Navigate directly to `/cart.html`
-3. Verify the checkout button is visible but cart is empty
-4. Verify no items in `.cart_item`
+**Acceptance Criteria:** AC1, AC2, AC3, AC4
+**Priority:** Critical
 
-**Expected**: Empty cart is reflected in cart view
+**Test Data:** Both Backpack ($29.99) and Bike Light ($9.99); subtotal = $39.98; tax = $3.20; total = $43.18
 
----
+**Steps:**
 
-#### 5.5 should handle special characters in checkout fields
-
-**Steps**:
-1. Login, add item, go to cart, click Checkout
-2. Fill `#first-name` with "John@#$"
-3. Fill `#last-name` with "Doe!%^"
-4. Fill `#postal-code` with "!@#45"
-5. Click `#continue`
-6. Verify behavior (SauceDemo accepts all input — note this observation)
-
-**Expected**: Form accepts input; any validation is documented
-
----
-
-### 6. Happy Path — Complete End-to-End Checkout
-
-**Seed**: Fresh browser session
-
-#### 6.1 Complete checkout flow from login to order confirmation
-
-**Steps**:
-1. Navigate to `https://www.saucedemo.com`
-2. Enter `standard_user` and `secret_sauce`, click Login
-3. Verify "Products" page loads
-4. Click "Add to cart" on "Sauce Labs Backpack"
-5. Verify cart badge shows `1`
-6. Click cart icon
-7. Verify cart page with item visible
-8. Click `#checkout`
-9. Fill First Name: "John", Last Name: "Doe", Postal Code: "10001"
-10. Click `#continue`
-11. Verify order overview page with item and pricing
-12. Verify total = subtotal + tax
-13. Click `#finish`
-14. Verify "Thank you for your order!" is displayed
-15. Click `#back-to-products`
-16. Verify products page and empty cart
-
-**Expected**: Full checkout flow completes successfully without errors
+| Step | Action | Expected Result |
+|------|--------|----------------|
+| 1 | Log in, add both items | Badge shows `2` |
+| 2 | Cart shows both items correctly | Names, prices, quantities correct |
+| 3 | Complete checkout form and navigate to overview | Overview shows both items with correct totals |
+| 4 | Click Finish | Confirmation page shown |
+| 5 | Click Back Home | Returns to inventory; cart empty |
 
 ---
 
 ## Test Coverage Matrix
 
-| Acceptance Criteria | Test Cases | Coverage |
-|--------------------|-----------|---------|
-| AC1: Cart Review | TC1.1 – TC1.8 | ✅ Full |
-| AC2: Checkout Information | TC2.1 – TC2.8 | ✅ Full |
-| AC3: Order Overview | TC3.1 – TC3.7 | ✅ Full |
-| AC4: Order Completion | TC4.1 – TC4.6 | ✅ Full |
-| AC5: Error Handling | TC5.1 – TC5.5 | ✅ Full |
-| Happy Path E2E | TC6.1 | ✅ Full |
+| Test Case | AC1 Cart Review | AC2 Checkout Info | AC3 Order Overview | AC4 Order Complete | AC5 Error Handling |
+|-----------|:--------------:|:-----------------:|:------------------:|:------------------:|:-----------------:|
+| TC-001 Happy Path Single Item | X | X | X | X | |
+| TC-002 Cart Review Multiple Items | X | | | | |
+| TC-003 Validation Empty First Name | | X | | | X |
+| TC-004 Validation Empty Last Name | | X | | | X |
+| TC-005 Validation Empty Zip Code | | X | | | X |
+| TC-006 Validation All Fields Empty | | X | | | X |
+| TC-007 Order Overview Details | | | X | | |
+| TC-008 Cancel from Overview | | | X | | |
+| TC-009 Order Completion Confirmation | | | | X | |
+| TC-010 Back Home Navigation | | | | X | |
+| TC-011 Special Characters in Form | | X | | | X |
+| TC-012 URL Verification Each Step | X | X | X | X | |
+| TC-013 Cancel from Info Form | | X | | | |
+| TC-014 Remove Item from Cart | X | | X | | |
+| TC-015 Happy Path Multiple Items | X | X | X | X | |
 
-**Total Test Cases: 39**  
-**Test Files: 6** (cart-review, checkout-info, checkout-overview, checkout-complete, error-handling, happy-path)
+---
+
+## Assumptions
+
+1. Application is available at `https://www.saucedemo.com` during test execution.
+2. Credentials `standard_user` / `secret_sauce` provide fully functional access.
+3. Each test starts from a fresh browser state (no cookies, local storage, or session data).
+4. Tax rate is fixed at ~8% (observed: $39.98 subtotal → $3.20 tax).
+5. Product prices: Sauce Labs Backpack = $29.99, Sauce Labs Bike Light = $9.99.
+6. Cancel on checkout info page → returns to cart; Cancel on overview page → returns to inventory.

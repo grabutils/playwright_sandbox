@@ -1,53 +1,46 @@
-// spec: specs/saucedemo-checkout-test-plan.md
-// seed: tests/seed.spec.ts
-
 import { test, expect } from '@playwright/test';
 import {
-  loginAndWait,
-  completeFullCheckout,
+  BASE_URL,
   PRODUCTS,
+  EXPECTED,
+  navigateToCheckoutOverview,
 } from './helpers';
 
-test.describe('Checkout Complete', () => {
+test.describe('Order Completion (AC4)', () => {
   test.beforeEach(async ({ page }) => {
-    await loginAndWait(page);
-    await completeFullCheckout(page);
+    await navigateToCheckoutOverview(page, [PRODUCTS.backpack.id]);
+    await page.locator('#finish').click();
+    await expect(page).toHaveURL(`${BASE_URL}/checkout-complete.html`);
   });
 
-  test('should redirect to confirmation page after clicking Finish', async ({ page }) => {
-    await expect(page).toHaveURL(/.*checkout-complete\.html/);
+  test('TC-009: confirmation page shows success header and dispatch message', async ({ page }) => {
+    await expect(page.locator('.complete-header')).toHaveText(EXPECTED.confirmationHeader);
+    await expect(page.locator('.complete-text')).toHaveText(EXPECTED.confirmationText);
   });
 
-  test('should show success message "Thank you for your order!"', async ({ page }) => {
-    await expect(page.locator('.complete-header')).toBeVisible();
-    await expect(page.locator('.complete-header')).toHaveText('Thank you for your order!');
+  test('TC-009: confirmation page shows pony express image', async ({ page }) => {
+    await expect(page.locator('img[alt="Pony Express"]')).toBeVisible();
   });
 
-  test('should show order confirmation descriptive text', async ({ page }) => {
-    await expect(page.locator('.complete-text')).toBeVisible();
-    const text = await page.locator('.complete-text').textContent();
-    expect(text?.trim().length).toBeGreaterThan(0);
-  });
-
-  test('should show Back Home button', async ({ page }) => {
+  test('TC-009: Back Home button is visible on confirmation page', async ({ page }) => {
     await expect(page.locator('#back-to-products')).toBeVisible();
-    await expect(page.locator('#back-to-products')).toBeEnabled();
+    await expect(page.locator('#back-to-products')).toHaveText('Back Home');
   });
 
-  test('should navigate to products when Back Home is clicked', async ({ page }) => {
-    // Click the Back Home button
-    await page.click('#back-to-products');
-
-    // Verify user is on the products page
-    await expect(page).toHaveURL(/.*inventory\.html/);
-    await expect(page.locator('.title')).toHaveText('Products');
+  test('TC-010: Back Home redirects to inventory page', async ({ page }) => {
+    await page.locator('#back-to-products').click();
+    await expect(page).toHaveURL(`${BASE_URL}/inventory.html`);
   });
 
-  test('cart should be empty after order completion', async ({ page }) => {
-    // Go back to products
-    await page.click('#back-to-products');
-
-    // Cart badge should not be visible (cart is cleared after order)
+  test('TC-010: cart is empty after completing order', async ({ page }) => {
+    await page.locator('#back-to-products').click();
+    await expect(page).toHaveURL(`${BASE_URL}/inventory.html`);
     await expect(page.locator('.shopping_cart_badge')).not.toBeVisible();
+  });
+
+  test('TC-010: inventory page loads fully after Back Home', async ({ page }) => {
+    await page.locator('#back-to-products').click();
+    await expect(page.locator('.inventory_list')).toBeVisible();
+    await expect(page.locator('.inventory_item')).toHaveCount(6);
   });
 });

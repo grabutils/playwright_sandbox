@@ -1,108 +1,49 @@
-// spec: specs/saucedemo-checkout-test-plan.md
-// seed: tests/seed.spec.ts
-
 import { test, expect } from '@playwright/test';
 import {
-  loginAndWait,
-  addItemToCart,
-  navigateToCart,
-  clickCheckout,
+  BASE_URL,
   PRODUCTS,
+  login,
+  addToCart,
+  goToCart,
+  proceedToCheckoutInfo,
 } from './helpers';
 
-test.describe('Checkout Information', () => {
+test.describe('Checkout Information Page (AC2)', () => {
   test.beforeEach(async ({ page }) => {
-    await loginAndWait(page);
-    await addItemToCart(page, PRODUCTS.backpack);
-    await navigateToCart(page);
-    await clickCheckout(page);
+    await login(page);
+    await addToCart(page, PRODUCTS.backpack.id);
+    await goToCart(page);
+    await proceedToCheckoutInfo(page);
   });
 
-  test('should display form fields for First Name, Last Name, and Zip Code', async ({ page }) => {
+  test('checkout info page has all required form elements', async ({ page }) => {
     await expect(page.locator('#first-name')).toBeVisible();
     await expect(page.locator('#last-name')).toBeVisible();
     await expect(page.locator('#postal-code')).toBeVisible();
     await expect(page.locator('#continue')).toBeVisible();
     await expect(page.locator('#cancel')).toBeVisible();
+    await expect(page.locator('text=Checkout: Your Information')).toBeVisible();
   });
 
-  test('should proceed to order overview when all fields are filled', async ({ page }) => {
-    // Step 1: Fill all required fields with valid data
-    await page.fill('#first-name', 'John');
-    await page.fill('#last-name', 'Doe');
-    await page.fill('#postal-code', '12345');
-
-    // Step 2: Click Continue
-    await page.click('#continue');
-
-    // Step 3: Verify redirect to order overview
-    await expect(page).toHaveURL(/.*checkout-step-two\.html/);
+  test('TC-013: Cancel on checkout info form returns to cart with items preserved', async ({ page }) => {
+    await page.locator('#first-name').fill('John');
+    await page.locator('#cancel').click();
+    await expect(page).toHaveURL(`${BASE_URL}/cart.html`);
+    await expect(page.locator('.shopping_cart_badge')).toHaveText('1');
+    await expect(page.locator('.inventory_item_name')).toHaveText(PRODUCTS.backpack.name);
   });
 
-  test('should show error when First Name is empty', async ({ page }) => {
-    // Step 1: Fill only last name and postal code
-    await page.fill('#last-name', 'Doe');
-    await page.fill('#postal-code', '12345');
+  test('TC-011: special characters in form fields complete checkout successfully', async ({ page }) => {
+    await page.locator('#first-name').fill('José');
+    await page.locator('#last-name').fill("O'Brien");
+    await page.locator('#postal-code').fill('SW1A 1AA');
+    await page.locator('#continue').click();
 
-    // Step 2: Click Continue without first name
-    await page.click('#continue');
+    await expect(page).toHaveURL(`${BASE_URL}/checkout-step-two.html`);
+    await expect(page.locator('.inventory_item_name')).toBeVisible();
 
-    // Step 3: Verify error message
-    await expect(page.locator('[data-test="error"]')).toBeVisible();
-    await expect(page.locator('[data-test="error"]')).toContainText('First Name is required');
-  });
-
-  test('should show error when Last Name is empty', async ({ page }) => {
-    // Step 1: Fill only first name and postal code
-    await page.fill('#first-name', 'John');
-    await page.fill('#postal-code', '12345');
-
-    // Step 2: Click Continue without last name
-    await page.click('#continue');
-
-    // Step 3: Verify error message
-    await expect(page.locator('[data-test="error"]')).toBeVisible();
-    await expect(page.locator('[data-test="error"]')).toContainText('Last Name is required');
-  });
-
-  test('should show error when Zip Code is empty', async ({ page }) => {
-    // Step 1: Fill only first and last name
-    await page.fill('#first-name', 'John');
-    await page.fill('#last-name', 'Doe');
-
-    // Step 2: Click Continue without postal code
-    await page.click('#continue');
-
-    // Step 3: Verify error message
-    await expect(page.locator('[data-test="error"]')).toBeVisible();
-    await expect(page.locator('[data-test="error"]')).toContainText('Postal Code is required');
-  });
-
-  test('should show error when all fields are empty', async ({ page }) => {
-    // Click Continue without filling any field
-    await page.click('#continue');
-
-    // Verify a validation error is shown
-    await expect(page.locator('[data-test="error"]')).toBeVisible();
-  });
-
-  test('should cancel checkout and return to cart', async ({ page }) => {
-    // Click Cancel on checkout info page
-    await page.click('#cancel');
-
-    // Verify return to cart
-    await expect(page).toHaveURL(/.*cart\.html/);
-  });
-
-  test('should dismiss error message when X button is clicked', async ({ page }) => {
-    // Trigger validation error
-    await page.click('#continue');
-    await expect(page.locator('[data-test="error"]')).toBeVisible();
-
-    // Click the X button to dismiss
-    await page.click('.error-button');
-
-    // Error should be gone
-    await expect(page.locator('[data-test="error"]')).not.toBeVisible();
+    await page.locator('#finish').click();
+    await expect(page).toHaveURL(`${BASE_URL}/checkout-complete.html`);
+    await expect(page.locator('.complete-header')).toHaveText('Thank you for your order!');
   });
 });

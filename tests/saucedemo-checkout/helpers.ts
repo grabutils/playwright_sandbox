@@ -1,83 +1,99 @@
-// spec: specs/saucedemo-checkout-test-plan.md
+import { Page, expect } from '@playwright/test';
 
-import { Page } from '@playwright/test';
+export const BASE_URL = 'https://www.saucedemo.com';
 
 export const CREDENTIALS = {
   username: 'standard_user',
   password: 'secret_sauce',
-  lockedUsername: 'locked_out_user',
-  wrongPassword: 'wrong_password',
 };
 
 export const PRODUCTS = {
-  backpack: 'sauce-labs-backpack',
-  bikeLight: 'sauce-labs-bike-light',
-  boltTShirt: 'sauce-labs-bolt-t-shirt',
+  backpack: {
+    id: 'sauce-labs-backpack',
+    name: 'Sauce Labs Backpack',
+    price: '$29.99',
+  },
+  bikeLight: {
+    id: 'sauce-labs-bike-light',
+    name: 'Sauce Labs Bike Light',
+    price: '$9.99',
+  },
 };
 
-export const CHECKOUT_INFO = {
-  firstName: 'John',
-  lastName: 'Doe',
-  postalCode: '10001',
+export const CHECKOUT_DATA = {
+  valid: { firstName: 'John', lastName: 'Doe', zip: '12345' },
+  special: { firstName: 'José', lastName: "O'Brien", zip: 'SW1A 1AA' },
 };
 
-export async function login(
+export const EXPECTED = {
+  subtotalTwo: 'Item total: $39.98',
+  tax: 'Tax: $3.20',
+  totalTwo: 'Total: $43.18',
+  subtotalOne: 'Item total: $29.99',
+  totalOne: 'Total: $32.39',
+  payment: 'SauceCard #31337',
+  shipping: 'Free Pony Express Delivery!',
+  confirmationHeader: 'Thank you for your order!',
+  confirmationText: 'Your order has been dispatched, and will arrive just as fast as the pony can get there!',
+};
+
+export async function login(page: Page): Promise<void> {
+  await page.goto(BASE_URL);
+  await page.locator('#user-name').fill(CREDENTIALS.username);
+  await page.locator('#password').fill(CREDENTIALS.password);
+  await page.locator('#login-button').click();
+  await expect(page).toHaveURL(`${BASE_URL}/inventory.html`);
+}
+
+export async function addToCart(page: Page, productId: string): Promise<void> {
+  await page.locator(`#add-to-cart-${productId}`).click();
+}
+
+export async function goToCart(page: Page): Promise<void> {
+  await page.locator('.shopping_cart_link').click();
+  await expect(page).toHaveURL(`${BASE_URL}/cart.html`);
+}
+
+export async function proceedToCheckoutInfo(page: Page): Promise<void> {
+  await page.locator('#checkout').click();
+  await expect(page).toHaveURL(`${BASE_URL}/checkout-step-one.html`);
+}
+
+export async function fillCheckoutForm(
   page: Page,
-  username = CREDENTIALS.username,
-  password = CREDENTIALS.password
-) {
-  await page.goto('/');
-  await page.fill('#user-name', username);
-  await page.fill('#password', password);
-  await page.click('#login-button');
+  firstName: string,
+  lastName: string,
+  zip: string,
+): Promise<void> {
+  await page.locator('#first-name').fill(firstName);
+  await page.locator('#last-name').fill(lastName);
+  await page.locator('#postal-code').fill(zip);
+  await page.locator('#continue').click();
 }
 
-export async function loginAndWait(
+export async function loginAndAddToCart(
   page: Page,
-  username = CREDENTIALS.username,
-  password = CREDENTIALS.password
-) {
-  await login(page, username, password);
-  await page.waitForURL('**/inventory.html');
+  productIds: string[],
+): Promise<void> {
+  await login(page);
+  for (const id of productIds) {
+    await addToCart(page, id);
+  }
 }
 
-export async function addItemToCart(page: Page, productKey: string = PRODUCTS.backpack) {
-  await page.click(`[data-test="add-to-cart-${productKey}"]`);
-}
-
-export async function navigateToCart(page: Page) {
-  await page.click('.shopping_cart_link');
-  await page.waitForURL('**/cart.html');
-}
-
-export async function clickCheckout(page: Page) {
-  await page.click('#checkout');
-  await page.waitForURL('**/checkout-step-one.html');
-}
-
-export async function fillCheckoutInfo(
+export async function navigateToCheckoutOverview(
   page: Page,
-  firstName = CHECKOUT_INFO.firstName,
-  lastName = CHECKOUT_INFO.lastName,
-  postalCode = CHECKOUT_INFO.postalCode
-) {
-  await page.fill('#first-name', firstName);
-  await page.fill('#last-name', lastName);
-  await page.fill('#postal-code', postalCode);
-  await page.click('#continue');
-}
-
-export async function clickFinish(page: Page) {
-  await page.click('#finish');
-  await page.waitForURL('**/checkout-complete.html');
-}
-
-/** Runs the full checkout flow from the products page */
-export async function completeFullCheckout(page: Page) {
-  await addItemToCart(page);
-  await navigateToCart(page);
-  await clickCheckout(page);
-  await fillCheckoutInfo(page);
-  await page.waitForURL('**/checkout-step-two.html');
-  await clickFinish(page);
+  productIds: string[],
+  checkoutData = CHECKOUT_DATA.valid,
+): Promise<void> {
+  await loginAndAddToCart(page, productIds);
+  await goToCart(page);
+  await proceedToCheckoutInfo(page);
+  await fillCheckoutForm(
+    page,
+    checkoutData.firstName,
+    checkoutData.lastName,
+    checkoutData.zip,
+  );
+  await expect(page).toHaveURL(`${BASE_URL}/checkout-step-two.html`);
 }
