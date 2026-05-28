@@ -1,85 +1,55 @@
-// spec: specs/saucedemo-checkout-test-plan.md
-// seed: tests/seed.spec.ts
-
 import { test, expect } from '@playwright/test';
 import {
-  loginAndWait,
-  addItemToCart,
-  navigateToCart,
-  clickCheckout,
-  fillCheckoutInfo,
+  BASE_URL,
   PRODUCTS,
+  EXPECTED,
+  navigateToCheckoutOverview,
 } from './helpers';
 
-test.describe('Checkout Overview', () => {
-  test.beforeEach(async ({ page }) => {
-    await loginAndWait(page);
-    await addItemToCart(page, PRODUCTS.backpack);
-    await navigateToCart(page);
-    await clickCheckout(page);
-    await fillCheckoutInfo(page, 'John', 'Doe', '10001');
-    await page.waitForURL('**/checkout-step-two.html');
-  });
+test.describe('Checkout Overview Page (AC3)', () => {
+  test('TC-007: overview displays all items, payment, shipping, subtotal, tax, and total', async ({ page }) => {
+    await navigateToCheckoutOverview(page, [PRODUCTS.backpack.id, PRODUCTS.bikeLight.id]);
 
-  test('should show summary of all ordered items', async ({ page }) => {
-    // Verify cart items are displayed in overview
-    await expect(page.locator('.cart_item')).toHaveCount(1);
-    await expect(page.locator('.inventory_item_name')).toBeVisible();
-    await expect(page.locator('.inventory_item_price')).toBeVisible();
-  });
+    await expect(page.locator('text=Checkout: Overview')).toBeVisible();
 
-  test('should display payment information', async ({ page }) => {
-    // Verify payment information section is present
-    await expect(page.locator('.summary_info')).toBeVisible();
-    await expect(page.locator('.summary_info_label').filter({ hasText: 'Payment Information:' })).toBeVisible();
-  });
+    const itemNames = page.locator('.inventory_item_name');
+    await expect(itemNames).toHaveCount(2);
+    await expect(itemNames.nth(0)).toHaveText(PRODUCTS.backpack.name);
+    await expect(itemNames.nth(1)).toHaveText(PRODUCTS.bikeLight.name);
 
-  test('should display shipping information', async ({ page }) => {
-    // Verify shipping information section is present
-    await expect(page.locator('.summary_info_label').filter({ hasText: 'Shipping Information:' })).toBeVisible();
-  });
+    const prices = page.locator('.inventory_item_price');
+    await expect(prices.nth(0)).toHaveText(PRODUCTS.backpack.price);
+    await expect(prices.nth(1)).toHaveText(PRODUCTS.bikeLight.price);
 
-  test('should show subtotal, tax, and total amounts', async ({ page }) => {
-    // Verify all price breakdowns are visible
-    await expect(page.locator('.summary_subtotal_label')).toBeVisible();
-    await expect(page.locator('.summary_tax_label')).toBeVisible();
-    await expect(page.locator('.summary_total_label')).toBeVisible();
+    await expect(page.locator('text=Payment Information:')).toBeVisible();
+    await expect(page.locator(`text=${EXPECTED.payment}`)).toBeVisible();
 
-    // Verify they contain dollar amounts
-    const subtotalText = await page.locator('.summary_subtotal_label').textContent();
-    const taxText = await page.locator('.summary_tax_label').textContent();
-    const totalText = await page.locator('.summary_total_label').textContent();
+    await expect(page.locator('text=Shipping Information:')).toBeVisible();
+    await expect(page.locator(`text=${EXPECTED.shipping}`)).toBeVisible();
 
-    expect(subtotalText).toMatch(/\$[\d.]+/);
-    expect(taxText).toMatch(/\$[\d.]+/);
-    expect(totalText).toMatch(/\$[\d.]+/);
-  });
+    await expect(page.locator('.summary_subtotal_label')).toHaveText(EXPECTED.subtotalTwo);
+    await expect(page.locator('.summary_tax_label')).toHaveText(EXPECTED.tax);
+    await expect(page.locator('.summary_total_label')).toHaveText(EXPECTED.totalTwo);
 
-  test('should have Cancel and Finish buttons', async ({ page }) => {
-    await expect(page.locator('#finish')).toBeVisible();
-    await expect(page.locator('#finish')).toBeEnabled();
     await expect(page.locator('#cancel')).toBeVisible();
-    await expect(page.locator('#cancel')).toBeEnabled();
+    await expect(page.locator('#finish')).toBeVisible();
   });
 
-  test('should navigate to products when Cancel is clicked', async ({ page }) => {
-    await page.click('#cancel');
-    await expect(page).toHaveURL(/.*inventory\.html/);
+  test('TC-008: Cancel on overview returns to inventory with cart preserved', async ({ page }) => {
+    await navigateToCheckoutOverview(page, [PRODUCTS.backpack.id]);
+
+    await page.locator('#cancel').click();
+    await expect(page).toHaveURL(`${BASE_URL}/inventory.html`);
+    await expect(page.locator('.shopping_cart_badge')).toHaveText('1');
   });
 
-  test('should have correct total equal to subtotal plus tax', async ({ page }) => {
-    // Extract numeric values from price labels
-    const parsePrice = async (selector: string): Promise<number> => {
-      const text = await page.locator(selector).textContent() ?? '';
-      const match = text.match(/\$([\d.]+)/);
-      return match ? parseFloat(match[1]) : 0;
-    };
+  test('overview quantities are correct for each item', async ({ page }) => {
+    await navigateToCheckoutOverview(page, [PRODUCTS.backpack.id, PRODUCTS.bikeLight.id]);
 
-    const subtotal = await parsePrice('.summary_subtotal_label');
-    const tax = await parsePrice('.summary_tax_label');
-    const total = await parsePrice('.summary_total_label');
-
-    // Allow for floating-point rounding to 2 decimal places
-    expect(total).toBeCloseTo(subtotal + tax, 2);
+    // Overview page uses .cart_quantity (same class as cart page, no .summary_quantity exists)
+    const quantities = page.locator('.cart_quantity');
+    await expect(quantities).toHaveCount(2);
+    await expect(quantities.nth(0)).toHaveText('1');
+    await expect(quantities.nth(1)).toHaveText('1');
   });
 });
