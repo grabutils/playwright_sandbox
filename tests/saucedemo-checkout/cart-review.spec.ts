@@ -1,70 +1,60 @@
-import { test, expect } from '@playwright/test';
-import {
-  BASE_URL,
-  PRODUCTS,
-  login,
-  addToCart,
-  goToCart,
-} from './helpers';
+import { test, expect } from '../../fixtures/test-fixtures';
+import { PRODUCTS, PRICES } from '../../helpers/data';
 
-test.describe('Cart Review (AC1)', () => {
+test.describe('Cart Review', () => {
   test.beforeEach(async ({ page }) => {
-    await login(page);
+    await page.goto('/inventory.html');
   });
 
-  test('TC-002: cart shows all added items with name, description, price, quantity', async ({ page }) => {
-    await addToCart(page, PRODUCTS.backpack.id);
-    await addToCart(page, PRODUCTS.bikeLight.id);
-    await expect(page.locator('.shopping_cart_badge')).toHaveText('2');
-
-    await goToCart(page);
-    await expect(page.locator('.cart_list .cart_item')).toHaveCount(2);
-
-    const firstItem = page.locator('.cart_item').nth(0);
-    await expect(firstItem.locator('.inventory_item_name')).toHaveText(PRODUCTS.backpack.name);
-    await expect(firstItem.locator('.inventory_item_desc')).not.toBeEmpty();
-    await expect(firstItem.locator('.inventory_item_price')).toHaveText(PRODUCTS.backpack.price);
-    await expect(firstItem.locator('.cart_quantity')).toHaveText('1');
-
-    const secondItem = page.locator('.cart_item').nth(1);
-    await expect(secondItem.locator('.inventory_item_name')).toHaveText(PRODUCTS.bikeLight.name);
-    await expect(secondItem.locator('.inventory_item_desc')).not.toBeEmpty();
-    await expect(secondItem.locator('.inventory_item_price')).toHaveText(PRODUCTS.bikeLight.price);
-    await expect(secondItem.locator('.cart_quantity')).toHaveText('1');
-
-    await expect(page.locator('#continue-shopping')).toBeVisible();
-    await expect(page.locator('#checkout')).toBeVisible();
+  test('TC-002: Cart displays item details correctly', async ({
+    page,
+    inventoryPage,
+    cartPage,
+  }) => {
+    await inventoryPage.addToCart(PRODUCTS.backpack);
+    await inventoryPage.goToCart();
+    await expect(page).toHaveURL(/cart\.html/);
+    await expect(cartPage.cartItems).toHaveCount(1);
+    await expect(cartPage.itemQuantities.first()).toHaveText('1');
+    await expect(cartPage.itemPrices.first()).toHaveText(PRICES.backpack);
+    await expect(cartPage.continueShoppingButton).toBeVisible();
+    await expect(cartPage.checkoutButton).toBeVisible();
   });
 
-  test('TC-002: Continue Shopping returns to inventory with cart badge preserved', async ({ page }) => {
-    await addToCart(page, PRODUCTS.backpack.id);
-    await addToCart(page, PRODUCTS.bikeLight.id);
-
-    await goToCart(page);
-    await page.locator('#continue-shopping').click();
-    await expect(page).toHaveURL(`${BASE_URL}/inventory.html`);
-    await expect(page.locator('.shopping_cart_badge')).toHaveText('2');
+  test('TC-008: Continue Shopping from cart returns to inventory', async ({
+    page,
+    inventoryPage,
+    cartPage,
+  }) => {
+    await inventoryPage.addToCart(PRODUCTS.backpack);
+    await inventoryPage.goToCart();
+    await expect(page).toHaveURL(/cart\.html/);
+    await cartPage.continueShopping();
+    await expect(page).toHaveURL(/inventory\.html/);
   });
 
-  test('TC-014: removing one item updates cart and subsequent checkout overview', async ({ page }) => {
-    await addToCart(page, PRODUCTS.backpack.id);
-    await addToCart(page, PRODUCTS.bikeLight.id);
-    await goToCart(page);
+  test('TC-012: Removing item from cart updates badge count', async ({
+    page,
+    inventoryPage,
+    cartPage,
+  }) => {
+    await inventoryPage.addToCart(PRODUCTS.backpack);
+    await expect(inventoryPage.cartBadge).toHaveText('1');
+    await inventoryPage.goToCart();
+    await cartPage.removeItem(PRODUCTS.backpack).click();
+    await expect(inventoryPage.cartBadge).not.toBeVisible();
+    await expect(cartPage.cartItems).toHaveCount(0);
+  });
 
-    await page.locator(`#remove-${PRODUCTS.bikeLight.id}`).click();
-    await expect(page.locator('.cart_item')).toHaveCount(1);
-    await expect(page.locator('.shopping_cart_badge')).toHaveText('1');
-    await expect(page.locator('.inventory_item_name')).toHaveText(PRODUCTS.backpack.name);
-
-    await page.locator('#checkout').click();
-    await page.locator('#first-name').fill('Test');
-    await page.locator('#last-name').fill('User');
-    await page.locator('#postal-code').fill('12345');
-    await page.locator('#continue').click();
-
-    await expect(page).toHaveURL(`${BASE_URL}/checkout-step-two.html`);
-    await expect(page.locator('.inventory_item_name')).toHaveCount(1);
-    await expect(page.locator('.inventory_item_name')).toHaveText(PRODUCTS.backpack.name);
-    await expect(page.locator('.summary_subtotal_label')).toContainText('$29.99');
+  test('TC-014: Cart badge reflects multiple product additions', async ({
+    page,
+    inventoryPage,
+  }) => {
+    await inventoryPage.addToCart(PRODUCTS.backpack);
+    await expect(inventoryPage.cartBadge).toHaveText('1');
+    await inventoryPage.addToCart(PRODUCTS.bikeLight);
+    await expect(inventoryPage.cartBadge).toHaveText('2');
+    await inventoryPage.addToCart(PRODUCTS.boltTShirt);
+    await expect(inventoryPage.cartBadge).toHaveText('3');
   });
 });

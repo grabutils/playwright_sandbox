@@ -5,6 +5,7 @@ node_modules/
 /blob-report/
 /playwright/.cache/
 /playwright/.auth/
+.auth/state.json
 
 # VSCode MCP config (may contain tokens)
 .vscode/mcp.json

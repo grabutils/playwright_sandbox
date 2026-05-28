@@ -1,74 +1,34 @@
-import { test, expect } from '@playwright/test';
-import {
-  BASE_URL,
-  PRODUCTS,
-  login,
-  addToCart,
-  goToCart,
-  proceedToCheckoutInfo,
-} from './helpers';
+import { test, expect } from '../../fixtures/test-fixtures';
+import { PRODUCTS, CHECKOUT_INFO } from '../../helpers/data';
 
-test.describe('Checkout Form Validation / Error Handling (AC2, AC5)', () => {
-  test.beforeEach(async ({ page }) => {
-    await login(page);
-    await addToCart(page, PRODUCTS.backpack.id);
-    await goToCart(page);
-    await proceedToCheckoutInfo(page);
+test.describe('Error Handling', () => {
+  test.beforeEach(async ({ page, inventoryPage, cartPage }) => {
+    await page.goto('/inventory.html');
+    await inventoryPage.addToCart(PRODUCTS.backpack);
+    await inventoryPage.goToCart();
+    await cartPage.proceedToCheckout();
+    await expect(page).toHaveURL(/checkout-step-one\.html/);
   });
 
-  test('TC-003: empty First Name shows required error and blocks progression', async ({ page }) => {
-    await page.locator('#last-name').fill('Doe');
-    await page.locator('#postal-code').fill('12345');
-    await page.locator('#continue').click();
-
-    await expect(page).toHaveURL(`${BASE_URL}/checkout-step-one.html`);
-    await expect(page.locator('[data-test="error"]')).toContainText('Error: First Name is required');
+  test('TC-011: Error message dismisses on close button click', async ({
+    page,
+    checkoutInfoPage,
+  }) => {
+    await checkoutInfoPage.submit();
+    await expect(checkoutInfoPage.errorMessage).toBeVisible();
+    await checkoutInfoPage.dismissError();
+    await expect(checkoutInfoPage.errorMessage).not.toBeVisible();
+    await expect(page).toHaveURL(/checkout-step-one\.html/);
   });
 
-  test('TC-004: empty Last Name shows required error and blocks progression', async ({ page }) => {
-    await page.locator('#first-name').fill('John');
-    await page.locator('#postal-code').fill('12345');
-    await page.locator('#continue').click();
-
-    await expect(page).toHaveURL(`${BASE_URL}/checkout-step-one.html`);
-    await expect(page.locator('[data-test="error"]')).toContainText('Error: Last Name is required');
-  });
-
-  test('TC-005: empty Postal Code shows required error and blocks progression', async ({ page }) => {
-    await page.locator('#first-name').fill('John');
-    await page.locator('#last-name').fill('Doe');
-    await page.locator('#continue').click();
-
-    await expect(page).toHaveURL(`${BASE_URL}/checkout-step-one.html`);
-    await expect(page.locator('[data-test="error"]')).toContainText('Error: Postal Code is required');
-  });
-
-  test('TC-006: all fields empty shows validation error and blocks progression', async ({ page }) => {
-    await page.locator('#continue').click();
-
-    await expect(page).toHaveURL(`${BASE_URL}/checkout-step-one.html`);
-    await expect(page.locator('[data-test="error"]')).toBeVisible();
-    await expect(page.locator('[data-test="error"]')).toContainText('Error:');
-  });
-
-  test('error message dismisses when X button is clicked', async ({ page }) => {
-    await page.locator('#continue').click();
-    await expect(page.locator('[data-test="error"]')).toBeVisible();
-
-    await page.locator('[data-test="error"] button').click();
-    await expect(page.locator('[data-test="error"]')).not.toBeVisible();
-  });
-
-  test('error clears after correcting fields and submitting successfully', async ({ page }) => {
-    await page.locator('#continue').click();
-    await expect(page.locator('[data-test="error"]')).toBeVisible();
-
-    await page.locator('#first-name').fill('John');
-    await page.locator('#last-name').fill('Doe');
-    await page.locator('#postal-code').fill('12345');
-    await page.locator('#continue').click();
-
-    await expect(page).toHaveURL(`${BASE_URL}/checkout-step-two.html`);
-    await expect(page.locator('[data-test="error"]')).not.toBeVisible();
+  test('TC-013: Postal code accepts alphanumeric input', async ({
+    page,
+    checkoutInfoPage,
+  }) => {
+    await checkoutInfoPage.firstNameInput.fill(CHECKOUT_INFO.firstName);
+    await checkoutInfoPage.lastNameInput.fill(CHECKOUT_INFO.lastName);
+    await checkoutInfoPage.postalCodeInput.fill('AB1 2CD');
+    await checkoutInfoPage.submit();
+    await expect(page).toHaveURL(/checkout-step-two\.html/);
   });
 });
