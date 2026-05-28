@@ -1,77 +1,83 @@
-# Test Execution Report — SCRUM-101
-**Story**: As a customer, I want to complete my purchase through a checkout process.  
-**App**: https://www.saucedemo.com  
-**Browser**: Chromium only  
-**Date**: 2026-05-28  
-**Suite**: `tests/saucedemo-checkout/` | **Config**: `playwright.config.ts`
+# SCRUM-101 Test Execution Report — POC
+
+**Story:** SCRUM-101 — E-commerce Checkout Process  
+**App:** https://www.saucedemo.com  
+**Browser:** Chromium only  
+**Run date:** 2026-05-29  
+**Suite:** 21 tests across 6 spec files, `fullyParallel: true`
 
 ---
 
 ## 1. Executive Summary
 
-| Metric | Count |
-|--------|-------|
-| Planned test cases | 15 |
-| Executed | 15 |
-| **Passed** | **15** |
-| Failed | 0 |
-| Blocked | 0 |
-| Defects logged | 0 |
-| Heal attempts used | 2 (Heal #1 fixed selector issues; no Heal #2 needed) |
+| Metric        | Count |
+| ------------- | ----- |
+| Planned       | 21    |
+| Executed      | 21    |
+| Passed        | 21    |
+| Failed        | 0     |
+| Blocked       | 0     |
+| Pass rate     | 100%  |
+| Duration      | ~15 s |
 
-**Outcome: All 15 tests PASSED. No open defects. All ACs covered.**
-
-> HTML report: `playwright-report/index.html`
+All 5 acceptance criteria are covered. No blocking defects found. Three flagged issues (FI-01 through FI-03) are informational — they reflect ambiguous or potentially unintended app behaviour and require product clarification, not immediate test fixes.
 
 ---
 
 ## 2. Defects Log
 
-No test failures remain after heal. Two selector defects were discovered and fixed during Phase 2 stabilization:
+No test failures were recorded in the final run.
 
-| ID | Severity | Title | Root Cause | Resolution |
-|----|----------|-------|------------|------------|
-| DEFECT-001 | Low | `getByTestId('cart-item')` returned 0 elements on cart + overview pages | `data-test="cart-item"` attribute absent from current saucedemo DOM; planner mapped incorrect attribute | Fixed in POMs: changed to `page.locator('.cart_item')` |
-| DEFECT-002 | Low | `locator('h3')` found no element on checkout-complete page | "Thank you for your order!" is not inside an `h3`; element level differs from planner observation | Fixed in POM: changed to `getByRole('heading', { name: 'Thank you for your order!' })` |
+### Flagged Issues (product-level, not test failures)
 
----
+| ID    | Severity | Title                                              | Repro | Expected | Actual | Evidence |
+| ----- | -------- | -------------------------------------------------- | ----- | -------- | ------ | -------- |
+| FI-01 | Low      | Checkout button accessible from empty cart         | Login → go to cart (no items added) → click Checkout | App should block or warn | App navigates to checkout info form | TC-017 passes documenting this behaviour |
+| FI-02 | Low      | Cancel on overview navigates to inventory, not cart | Login → add item → checkout info → overview → Cancel | Return to cart (`/cart.html`) | Returns to inventory (`/inventory.html`); items remain in cart | TC-013 documents actual navigation |
+| FI-03 | Info     | Cart quantity is a static label, not editable      | Add item → go to cart → observe quantity column | Editable quantity control | Non-editable label "1" only; no increment/decrement | Observed during exploration |
 
-## 3. Acceptance Criteria Coverage Map
+### Healing Log (test infrastructure — 1 attempt, within 2-attempt cap)
 
-| AC | Description | Covered By | Status |
-|----|-------------|------------|--------|
-| AC1 | Cart Review — items visible with name/desc/price/qty; Continue Shopping + Checkout buttons | TC-001, TC-002, TC-008, TC-012, TC-014 | ✅ Covered |
-| AC2 | Checkout Info Entry — First Name, Last Name, Zip mandatory; error on empty submit | TC-001, TC-003, TC-006, TC-009, TC-010, TC-015 | ✅ Covered |
-| AC3 | Order Overview — item summary, payment/shipping info, subtotal/tax/total, Cancel/Finish | TC-001, TC-004, TC-007 | ✅ Covered |
-| AC4 | Order Completion — confirmation page, success message, Back Home, cart cleared | TC-001, TC-005 | ✅ Covered |
-| AC5 | Error Handling — validation errors; cannot proceed until valid; errors dismissable | TC-003, TC-009, TC-010, TC-011, TC-013 | ✅ Covered |
-
-**All 5 ACs covered. No gaps.**
+| Test   | Original Assertion                        | Fixed Assertion                                    | Root Cause |
+| ------ | ----------------------------------------- | -------------------------------------------------- | ---------- |
+| TC-020 | `[data-test="cart-item"].toHaveCount(3)` | `getByTestId('inventory-item-name').toHaveCount(3)` | `cart-item` locator resolved to 0 in parallel runs; `inventory-item-name` is stable |
+| TC-014 | `[data-test="cart-item"].toHaveCount(2)` | `getByTestId('inventory-item-name').toHaveCount(2)` | Same; `storageState: undefined` also applied to prevent potential addInitScript interference on multi-item navigation |
 
 ---
 
-## 4. Flagged Issues (Bugs, Not Defects in Tests)
+## 3. Acceptance-Criteria Coverage Map
 
-These were observed during exploration and flagged — not blocking test suite. Recommend filing as bug tickets.
+| AC    | Description                                  | Covered by                                                        | Status  |
+| ----- | -------------------------------------------- | ----------------------------------------------------------------- | ------- |
+| AC1   | Cart review — items, totals, nav buttons     | TC-001, TC-002, TC-003, TC-004, TC-005, TC-017, TC-020           | COVERED |
+| AC2   | Checkout info — form fields, mandatory       | TC-006, TC-007, TC-008, TC-009, TC-010, TC-011, TC-018, TC-019   | COVERED |
+| AC3   | Order overview — summary, totals, Cancel/Finish | TC-012, TC-013, TC-014, TC-021                                 | COVERED |
+| AC4   | Order completion — success message, Back Home | TC-001, TC-015, TC-016                                           | COVERED |
+| AC5   | Error handling — validation messages         | TC-006, TC-007, TC-008, TC-009, TC-010                           | COVERED |
 
-| ID | Severity | Title | Observation |
-|----|----------|-------|-------------|
-| FLAG-001 | Low | Fleece Jacket price element renders two prices | DOM shows "$29.99 $49.99" as a single text node — likely broken strikethrough for sale price |
-| FLAG-002 | High | Checkout button enabled on empty cart | `[data-test='checkout']` is active when cart has 0 items; allows submitting empty orders |
-| FLAG-003 | Medium | Overview Cancel navigates to inventory, not cart | Cancel on `/checkout-step-two.html` goes to `/inventory.html` — unintuitive; cart is preserved but user must re-navigate |
-| FLAG-004 | Medium | Cart page shows no subtotal | AC1 states "total price calculation" visible on cart page; totals only appear on checkout overview |
-| FLAG-005 | Low | Postal code accepts any string | Letters, spaces, and special characters pass validation without error (e.g., `AB1 2CD` accepted) |
+No gaps.
 
 ---
 
-## 5. Risk Areas & Next Steps
+## 4. Risk Areas & Next Steps
 
-**Risks:**
-- FLAG-002 (empty cart checkout) is a high-severity functional gap. A dedicated negative test would need server-side validation to pass.
-- TC-012 (remove item) removes by CSS class selector `.cart_item` — if saucedemo adds non-product rows to the cart list, the count assertion could be fragile.
-- storageState caches the cart state on first auth; if saucedemo ever persists cart server-side, the auth file would need to be regenerated between test runs.
+**Risk areas:**
+- Empty-cart checkout (FI-01): If this is unintended, a back-end guard or UI disable on the Checkout button is needed.
+- Cancel-from-overview navigation (FI-02): Users expecting to return to cart after reviewing will be confused. Low severity but may impact UX.
+- Quantity immutability (FI-03): No way to update quantity except remove + re-add. Usability risk.
 
 **Next steps:**
-- File FLAG-002 as a P1 bug ticket (functional regression in checkout flow).
-- Add a dedicated empty-cart checkout test once FLAG-002 is addressed by the dev team.
-- Add visual snapshot tests for the order confirmation page when a visual testing tool is integrated.
+1. Product owner to triage FI-01, FI-02, FI-03 and clarify expected behaviour.
+2. Enable `retries: 1` in non-CI runs if network flakiness is observed on the live app.
+3. If checkout expands (promo codes, multiple addresses, payment methods), add P1 test cases.
+4. Run on CI with `--shard` for faster feedback on larger pipelines.
+
+---
+
+## 5. Report Links
+
+| Report               | Path                                 |
+| -------------------- | ------------------------------------ |
+| Extent-style HTML    | [extent-report/index.html](../extent-report/index.html) |
+| Playwright HTML      | [playwright-report/index.html](../playwright-report/index.html) |
+| Test Plan            | [specs/checkout-plan.md](../specs/checkout-plan.md) |

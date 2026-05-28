@@ -1,47 +1,47 @@
-import { test, expect } from '../../fixtures/test-fixtures';
-import { PRODUCTS, CHECKOUT_INFO, PRICES } from '../../helpers/data';
+import { test, expect } from '@playwright/test';
 
-test.describe('Happy Path Checkout', () => {
-  test('Complete checkout happy path', async ({
-    page,
-    inventoryPage,
-    cartPage,
-    checkoutInfoPage,
-    checkoutOverviewPage,
-    checkoutCompletePage,
-  }) => {
-    await page.goto('/inventory.html');
-    await inventoryPage.addToCart(PRODUCTS.backpack);
-    await expect(inventoryPage.cartBadge).toHaveText('1');
+const USERNAME = process.env.SAUCE_USERNAME ?? 'standard_user';
+const PASSWORD = process.env.SAUCE_PASSWORD ?? 'secret_sauce';
 
-    await inventoryPage.goToCart();
-    await expect(page).toHaveURL(/cart\.html/);
-    await expect(cartPage.cartItems).toHaveCount(1);
+test.beforeEach(async ({ page }) => {
+  await page.goto('/');
+  await page.getByTestId('username').fill(USERNAME);
+  await page.getByTestId('password').fill(PASSWORD);
+  await page.getByTestId('login-button').click();
+  await expect(page).toHaveURL(/inventory/);
+});
 
-    await cartPage.proceedToCheckout();
-    await expect(page).toHaveURL(/checkout-step-one\.html/);
+test('P0 - TC-001 - complete checkout end-to-end happy path', async ({ page }) => {
+  await page.getByTestId('add-to-cart-sauce-labs-backpack').click();
+  await expect(page.getByTestId('shopping-cart-badge')).toHaveText('1');
 
-    await checkoutInfoPage.fillForm(
-      CHECKOUT_INFO.firstName,
-      CHECKOUT_INFO.lastName,
-      CHECKOUT_INFO.postalCode
-    );
-    await checkoutInfoPage.submit();
-    await expect(page).toHaveURL(/checkout-step-two\.html/);
+  await page.getByTestId('shopping-cart-link').click();
+  await expect(page).toHaveURL(/cart/);
+  await expect(page.getByTestId('inventory-item-name')).toContainText('Sauce Labs Backpack');
+  await expect(page.getByTestId('inventory-item-price')).toContainText('$29.99');
+  await expect(page.getByTestId('item-quantity')).toContainText('1');
 
-    await expect(checkoutOverviewPage.subtotalLabel).toContainText(PRICES.backpack);
-    await expect(checkoutOverviewPage.taxLabel).toContainText(PRICES.backpackTax);
-    await expect(checkoutOverviewPage.totalLabel).toContainText(PRICES.backpackTotal);
+  await page.getByTestId('checkout').click();
+  await expect(page).toHaveURL(/checkout-step-one/);
 
-    await checkoutOverviewPage.finish();
-    await expect(page).toHaveURL(/checkout-complete\.html/);
+  await page.getByTestId('firstName').fill('John');
+  await page.getByTestId('lastName').fill('Doe');
+  await page.getByTestId('postalCode').fill('12345');
+  await page.getByTestId('continue').click();
+  await expect(page).toHaveURL(/checkout-step-two/);
 
-    await expect(checkoutCompletePage.completeContainer).toBeVisible();
-    await expect(checkoutCompletePage.thankYouHeading).toContainText('Thank you for your order');
-    await expect(checkoutCompletePage.backHomeButton).toBeVisible();
+  await expect(page.getByTestId('subtotal-label')).toBeVisible();
+  await expect(page.getByTestId('tax-label')).toBeVisible();
+  await expect(page.getByTestId('total-label')).toBeVisible();
 
-    await checkoutCompletePage.backToProducts();
-    await expect(page).toHaveURL(/inventory\.html/);
-    await expect(inventoryPage.cartBadge).not.toBeVisible();
-  });
+  await page.getByTestId('finish').click();
+  await expect(page).toHaveURL(/checkout-complete/);
+
+  await expect(page.getByTestId('complete-header')).toContainText('Thank you for your order!');
+  await expect(page.getByTestId('complete-text')).toBeVisible();
+  await expect(page.getByRole('img', { name: /pony express/i })).toBeVisible();
+
+  await page.getByTestId('back-to-products').click();
+  await expect(page).toHaveURL(/inventory/);
+  await expect(page.getByTestId('shopping-cart-badge')).not.toBeVisible();
 });

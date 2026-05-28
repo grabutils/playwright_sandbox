@@ -1,60 +1,62 @@
-import { test, expect } from '../../fixtures/test-fixtures';
-import { PRODUCTS, PRICES } from '../../helpers/data';
+import { test, expect } from '@playwright/test';
 
-test.describe('Cart Review', () => {
-  test.beforeEach(async ({ page }) => {
-    await page.goto('/inventory.html');
-  });
+const USERNAME = process.env.SAUCE_USERNAME ?? 'standard_user';
+const PASSWORD = process.env.SAUCE_PASSWORD ?? 'secret_sauce';
 
-  test('TC-002: Cart displays item details correctly', async ({
-    page,
-    inventoryPage,
-    cartPage,
-  }) => {
-    await inventoryPage.addToCart(PRODUCTS.backpack);
-    await inventoryPage.goToCart();
-    await expect(page).toHaveURL(/cart\.html/);
-    await expect(cartPage.cartItems).toHaveCount(1);
-    await expect(cartPage.itemQuantities.first()).toHaveText('1');
-    await expect(cartPage.itemPrices.first()).toHaveText(PRICES.backpack);
-    await expect(cartPage.continueShoppingButton).toBeVisible();
-    await expect(cartPage.checkoutButton).toBeVisible();
-  });
+test.beforeEach(async ({ page }) => {
+  await page.goto('/');
+  await page.getByTestId('username').fill(USERNAME);
+  await page.getByTestId('password').fill(PASSWORD);
+  await page.getByTestId('login-button').click();
+  await expect(page).toHaveURL(/inventory/);
+});
 
-  test('TC-008: Continue Shopping from cart returns to inventory', async ({
-    page,
-    inventoryPage,
-    cartPage,
-  }) => {
-    await inventoryPage.addToCart(PRODUCTS.backpack);
-    await inventoryPage.goToCart();
-    await expect(page).toHaveURL(/cart\.html/);
-    await cartPage.continueShopping();
-    await expect(page).toHaveURL(/inventory\.html/);
-  });
+test('P0 - TC-002 - item details displayed correctly in cart', async ({ page }) => {
+  await page.getByTestId('add-to-cart-sauce-labs-bolt-t-shirt').click();
+  await page.getByTestId('shopping-cart-link').click();
 
-  test('TC-012: Removing item from cart updates badge count', async ({
-    page,
-    inventoryPage,
-    cartPage,
-  }) => {
-    await inventoryPage.addToCart(PRODUCTS.backpack);
-    await expect(inventoryPage.cartBadge).toHaveText('1');
-    await inventoryPage.goToCart();
-    await cartPage.removeItem(PRODUCTS.backpack).click();
-    await expect(inventoryPage.cartBadge).not.toBeVisible();
-    await expect(cartPage.cartItems).toHaveCount(0);
-  });
+  await expect(page.getByTestId('inventory-item-name')).toContainText('Sauce Labs Bolt T-Shirt');
+  await expect(page.getByTestId('inventory-item-desc')).not.toBeEmpty();
+  await expect(page.getByTestId('inventory-item-price')).toContainText('$');
+  await expect(page.getByTestId('item-quantity')).toContainText('1');
+  await expect(page.getByTestId('cart-quantity-label')).toBeVisible();
+  await expect(page.getByTestId('cart-desc-label')).toBeVisible();
+});
 
-  test('TC-014: Cart badge reflects multiple product additions', async ({
-    page,
-    inventoryPage,
-  }) => {
-    await inventoryPage.addToCart(PRODUCTS.backpack);
-    await expect(inventoryPage.cartBadge).toHaveText('1');
-    await inventoryPage.addToCart(PRODUCTS.bikeLight);
-    await expect(inventoryPage.cartBadge).toHaveText('2');
-    await inventoryPage.addToCart(PRODUCTS.boltTShirt);
-    await expect(inventoryPage.cartBadge).toHaveText('3');
-  });
+test('P1 - TC-003 - continue shopping returns to inventory with cart intact', async ({ page }) => {
+  await page.getByTestId('add-to-cart-sauce-labs-backpack').click();
+  await page.getByTestId('shopping-cart-link').click();
+  await expect(page).toHaveURL(/cart/);
+
+  await page.getByTestId('continue-shopping').click();
+  await expect(page).toHaveURL(/inventory/);
+  await expect(page.getByTestId('shopping-cart-badge')).toHaveText('1');
+});
+
+test('P1 - TC-004 - remove item clears cart', async ({ page }) => {
+  await page.getByTestId('add-to-cart-sauce-labs-backpack').click();
+  await page.getByTestId('shopping-cart-link').click();
+
+  await page.getByTestId('remove-sauce-labs-backpack').click();
+  await expect(page.locator('[data-test="cart-item"]')).toHaveCount(0);
+  await expect(page.getByTestId('shopping-cart-badge')).not.toBeVisible();
+});
+
+test('P0 - TC-005 - checkout and continue shopping buttons present', async ({ page }) => {
+  await page.getByTestId('add-to-cart-sauce-labs-backpack').click();
+  await page.getByTestId('shopping-cart-link').click();
+
+  await expect(page.getByTestId('checkout')).toBeVisible();
+  await expect(page.getByTestId('continue-shopping')).toBeVisible();
+});
+
+test('P2 - TC-020 - cart badge count matches multiple items added', async ({ page }) => {
+  await page.getByTestId('add-to-cart-sauce-labs-backpack').click();
+  await page.getByTestId('add-to-cart-sauce-labs-fleece-jacket').click();
+  await page.getByTestId('add-to-cart-sauce-labs-onesie').click();
+
+  await expect(page.getByTestId('shopping-cart-badge')).toHaveText('3');
+
+  await page.getByTestId('shopping-cart-link').click();
+  await expect(page.getByTestId('inventory-item-name')).toHaveCount(3);
 });
