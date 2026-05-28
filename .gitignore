@@ -5,6 +5,7 @@ node_modules/
 /blob-report/
 /playwright/.cache/
 /playwright/.auth/
+.auth/state.json
 
 # Test result artifacts (keep markdown reports)
 /test-results/*.json
