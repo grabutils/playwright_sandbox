@@ -1,0 +1,33 @@
+{
+  "name": "agenticai_qa_workflow_example",
+  "version": "1.0.0",
+  "description": "Production-grade Playwright test automation framework with POM, fixtures, helpers, and comprehensive ecommerce test suite",
+  "main": "index.js",
+  "scripts": {
+    "test": "playwright test",
+    "test:chromium": "playwright test --project=chromium",
+    "test:firefox": "playwright test --project=firefox",
+    "test:webkit": "playwright test --project=webkit",
+    "test:all": "playwright test",
+    "test:debug": "playwright test --debug",
+    "test:headed": "playwright test --headed",
+    "test:ui": "playwright test --ui",
+    "report": "playwright show-report",
+    "report:open": "playwright show-report ./playwright-report",
+    "trace": "playwright show-trace",
+    "codegen": "playwright codegen https://automationexercise.com"
+  },
+  "keywords": [
+    "playwright",
+    "testing",
+    "automation",
+    "ecommerce"
+  ],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "devDependencies": {
+    "@playwright/test": "^1.60.0",
+    "@types/node": "^25.9.1"
+  }
+}

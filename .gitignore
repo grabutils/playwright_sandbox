@@ -1,0 +1,18 @@
+
+# Playwright
+node_modules/
+/playwright-report/
+/blob-report/
+/playwright/.cache/
+/playwright/.auth/
+
+# Test result artifacts (keep markdown reports)
+/test-results/*.json
+/test-results/*.xml
+/test-results/*.png
+/test-results/*.webm
+/test-results/.playwright-artifacts-*
+/test-results/.last-run.json
+/test-results/cart-review-*
+/test-results/checkout-info-*
+/test-results/checkout-*
