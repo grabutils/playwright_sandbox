@@ -6,6 +6,9 @@ node_modules/
 /playwright/.cache/
 /playwright/.auth/
 
+# VSCode MCP config (may contain tokens)
+.vscode/mcp.json
+
 # Test result artifacts (keep markdown reports)
 /test-results/*.json
 /test-results/*.xml
