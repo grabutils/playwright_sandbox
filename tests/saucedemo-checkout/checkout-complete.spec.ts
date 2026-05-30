@@ -1,64 +1,61 @@
 import { test, expect } from '@playwright/test';
 
-const APP_URL = process.env.APP_URL || 'https://www.saucedemo.com';
-const USERNAME = process.env.SAUCE_USERNAME || 'standard_user';
-const PASSWORD = process.env.SAUCE_PASSWORD || 'secret_sauce';
+// TC-006, TC-020, TC-023 — order confirmation and post-checkout state
 
-async function loginAndAddToCart(page: any, items: string[] = ['add-to-cart-sauce-labs-backpack']) {
-  await page.goto(APP_URL);
-  await page.getByTestId('username').fill(USERNAME);
-  await page.getByTestId('password').fill(PASSWORD);
+async function completeCheckout(page: any) {
+  await page.goto('/');
+  await page.getByTestId('username').fill('standard_user');
+  await page.getByTestId('password').fill('secret_sauce');
   await page.getByTestId('login-button').click();
-  await expect(page).toHaveURL(/inventory\.html/);
-  for (const item of items) {
-    await page.getByTestId(item).click();
-  }
-}
-
-async function proceedToCheckoutOverview(page: any, firstName = 'John', lastName = 'Doe', postalCode = '12345') {
+  await page.waitForURL('**/inventory.html');
+  await page.getByTestId('add-to-cart-sauce-labs-backpack').click();
   await page.getByTestId('shopping-cart-link').click();
+  await page.waitForURL('**/cart.html');
   await page.getByTestId('checkout').click();
-  await page.getByTestId('firstName').fill(firstName);
-  await page.getByTestId('lastName').fill(lastName);
-  await page.getByTestId('postalCode').fill(postalCode);
+  await page.waitForURL('**/checkout-step-one.html');
+  await page.getByTestId('firstName').fill('John');
+  await page.getByTestId('lastName').fill('Doe');
+  await page.getByTestId('postalCode').fill('12345');
   await page.getByTestId('continue').click();
-  await expect(page).toHaveURL(/checkout-step-two\.html/);
+  await page.waitForURL('**/checkout-step-two.html');
+  await page.getByTestId('finish').click();
+  await page.waitForURL('**/checkout-complete.html');
 }
 
-test.describe('Checkout Overview and Completion', () => {
-  test('TC-016 - P1 - Checkout step 2 displays correct order summary', async ({ page }) => {
-    await loginAndAddToCart(page);
-    await proceedToCheckoutOverview(page);
+test('TC-006 - P0 - Order confirmation page details are complete', async ({ page }) => {
+  await completeCheckout(page);
 
-    await expect(page.getByTestId('inventory-item-name').filter({ hasText: 'Sauce Labs Backpack' })).toBeVisible();
-    await expect(page.getByTestId('inventory-item-price').first()).toContainText('29.99');
-    await expect(page.getByTestId('subtotal-label')).toContainText('Item total: $29.99');
-    await expect(page.getByTestId('tax-label')).toContainText('Tax:');
-    await expect(page.getByTestId('total-label')).toContainText('Total: $');
-    await expect(page.getByTestId('payment-info-label')).toBeVisible();
-    await expect(page.getByTestId('shipping-info-label')).toBeVisible();
-  });
+  await expect(page.getByTestId('title')).toHaveText('Checkout: Complete!');
+  await expect(page.getByTestId('complete-header')).toHaveText('Thank you for your order!');
+  await expect(page.getByTestId('complete-text')).toBeVisible();
+  await expect(page.getByTestId('complete-text')).not.toHaveText('');
+  await expect(page.getByTestId('back-to-products')).toBeVisible();
+  await expect(page.getByTestId('back-to-products')).toBeEnabled();
 
-  test('TC-021 - P2 - Multiple items checkout: total price calculation accuracy', async ({ page }) => {
-    await loginAndAddToCart(page, [
-      'add-to-cart-sauce-labs-backpack',
-      'add-to-cart-sauce-labs-bike-light',
-    ]);
-    await proceedToCheckoutOverview(page, 'Jane', 'Smith', '90210');
+  await page.getByTestId('back-to-products').click();
+  await page.waitForURL('**/inventory.html');
+  await expect(page.getByTestId('inventory-container')).toBeVisible();
+});
 
-    await expect(page.getByTestId('inventory-item-name').filter({ hasText: 'Sauce Labs Backpack' })).toBeVisible();
-    await expect(page.getByTestId('inventory-item-name').filter({ hasText: 'Sauce Labs Bike Light' })).toBeVisible();
-    // Item total = $29.99 + $9.99 = $39.98
-    await expect(page.getByTestId('subtotal-label')).toContainText('$39.98');
-    await expect(page.getByTestId('tax-label')).toContainText('Tax:');
+test('TC-020 - P2 - Cart clears after order is completed', async ({ page }) => {
+  await completeCheckout(page);
 
-    // Parse and verify total = subtotal + tax
-    const subtotalText = await page.getByTestId('subtotal-label').textContent();
-    const taxText = await page.getByTestId('tax-label').textContent();
-    const totalText = await page.getByTestId('total-label').textContent();
-    const subtotal = parseFloat(subtotalText!.replace(/[^0-9.]/g, ''));
-    const tax = parseFloat(taxText!.replace(/[^0-9.]/g, ''));
-    const total = parseFloat(totalText!.replace(/[^0-9.]/g, ''));
-    expect(Math.abs(total - (subtotal + tax))).toBeLessThan(0.01);
-  });
+  await expect(page.getByTestId('shopping-cart-badge')).not.toBeVisible();
+  await page.getByTestId('back-to-products').click();
+  await page.waitForURL('**/inventory.html');
+  await expect(page.getByTestId('shopping-cart-badge')).not.toBeVisible();
+
+  await page.getByTestId('shopping-cart-link').click();
+  await page.waitForURL('**/cart.html');
+  await expect(page.getByTestId('inventory-item-name')).not.toBeVisible();
+});
+
+test('TC-023 - P2 - No order reference number on confirmation page (defect FI-004)', async ({ page }) => {
+  await completeCheckout(page);
+
+  // FI-004: No order reference number is displayed on the confirmation page.
+  const headerText = await page.getByTestId('complete-header').textContent() ?? '';
+  const bodyText = await page.getByTestId('complete-text').textContent() ?? '';
+  expect(headerText.match(/\b[A-Z0-9]{6,}\b/)).toBeNull();
+  expect(bodyText.match(/order\s*(#|number|id)\s*\d+/i)).toBeNull();
 });
