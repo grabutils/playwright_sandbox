@@ -7,8 +7,8 @@ node_modules/
 /playwright/.auth/
 .auth/state.json
 
-# VSCode MCP config (may contain tokens)
-.vscode/mcp.json
+# Extent-style HTML report (generated, not committed)
+extent-report/
 
 # Test result artifacts (keep markdown reports)
 /test-results/*.json
@@ -17,6 +17,7 @@ node_modules/
 /test-results/*.webm
 /test-results/.playwright-artifacts-*
 /test-results/.last-run.json
+/test-results/saucedemo-checkout-*/
 /test-results/cart-review-*
 /test-results/checkout-info-*
 /test-results/checkout-*

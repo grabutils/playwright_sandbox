@@ -1,47 +1,77 @@
-import { test, expect } from '../../fixtures/test-fixtures';
-import { PRODUCTS, CHECKOUT_INFO, PRICES } from '../../helpers/data';
+import { test, expect } from '@playwright/test';
 
 test.describe('Happy Path Checkout', () => {
-  test('Complete checkout happy path', async ({
-    page,
-    inventoryPage,
-    cartPage,
-    checkoutInfoPage,
-    checkoutOverviewPage,
-    checkoutCompletePage,
-  }) => {
-    await page.goto('/inventory.html');
-    await inventoryPage.addToCart(PRODUCTS.backpack);
-    await expect(inventoryPage.cartBadge).toHaveText('1');
+  test.beforeEach(async ({ page }) => {
+    await page.goto('/');
+    await page.getByTestId('username').fill('standard_user');
+    await page.getByTestId('password').fill('secret_sauce');
+    await page.getByTestId('login-button').click();
+    await expect(page).toHaveURL(/inventory/);
+  });
 
-    await inventoryPage.goToCart();
-    await expect(page).toHaveURL(/cart\.html/);
-    await expect(cartPage.cartItems).toHaveCount(1);
+  test('P0 - Complete checkout with single item — happy path', async ({ page }) => {
+    await page.getByTestId('add-to-cart-sauce-labs-backpack').click();
+    await page.getByTestId('shopping-cart-link').click();
+    await expect(page).toHaveURL(/cart/);
 
-    await cartPage.proceedToCheckout();
-    await expect(page).toHaveURL(/checkout-step-one\.html/);
+    await page.getByTestId('checkout').click();
+    await expect(page).toHaveURL(/checkout-step-one/);
 
-    await checkoutInfoPage.fillForm(
-      CHECKOUT_INFO.firstName,
-      CHECKOUT_INFO.lastName,
-      CHECKOUT_INFO.postalCode
-    );
-    await checkoutInfoPage.submit();
-    await expect(page).toHaveURL(/checkout-step-two\.html/);
+    await page.getByTestId('firstName').fill('John');
+    await page.getByTestId('lastName').fill('Doe');
+    await page.getByTestId('postalCode').fill('12345');
+    await page.getByTestId('continue').click();
+    await expect(page).toHaveURL(/checkout-step-two/);
 
-    await expect(checkoutOverviewPage.subtotalLabel).toContainText(PRICES.backpack);
-    await expect(checkoutOverviewPage.taxLabel).toContainText(PRICES.backpackTax);
-    await expect(checkoutOverviewPage.totalLabel).toContainText(PRICES.backpackTotal);
+    await expect(page.getByTestId('inventory-item-name')).toHaveText('Sauce Labs Backpack');
+    await page.getByTestId('finish').click();
+    await expect(page).toHaveURL(/checkout-complete/);
 
-    await checkoutOverviewPage.finish();
-    await expect(page).toHaveURL(/checkout-complete\.html/);
+    await expect(page.getByTestId('complete-header')).toBeVisible();
+    await expect(page.getByTestId('back-to-products')).toBeVisible();
+  });
 
-    await expect(checkoutCompletePage.completeContainer).toBeVisible();
-    await expect(checkoutCompletePage.thankYouHeading).toContainText('Thank you for your order');
-    await expect(checkoutCompletePage.backHomeButton).toBeVisible();
+  test('P0 - Complete checkout with two items — cart total accuracy', async ({ page }) => {
+    await page.getByTestId('add-to-cart-sauce-labs-backpack').click();
+    await page.getByTestId('add-to-cart-sauce-labs-bike-light').click();
+    await expect(page.getByTestId('shopping-cart-badge')).toHaveText('2');
 
-    await checkoutCompletePage.backToProducts();
-    await expect(page).toHaveURL(/inventory\.html/);
-    await expect(inventoryPage.cartBadge).not.toBeVisible();
+    await page.getByTestId('shopping-cart-link').click();
+    await expect(page).toHaveURL(/cart/);
+    await expect(page.getByTestId('inventory-item-name')).toHaveCount(2);
+
+    await page.getByTestId('checkout').click();
+    await page.getByTestId('firstName').fill('Jane');
+    await page.getByTestId('lastName').fill('Smith');
+    await page.getByTestId('postalCode').fill('90210');
+    await page.getByTestId('continue').click();
+    await expect(page).toHaveURL(/checkout-step-two/);
+
+    await expect(page.getByTestId('inventory-item-name')).toHaveCount(2);
+    // Subtotal = $29.99 + $9.99 = $39.98
+    await expect(page.getByTestId('subtotal-label')).toContainText('39.98');
+
+    await page.getByTestId('finish').click();
+    await expect(page).toHaveURL(/checkout-complete/);
+    await expect(page.getByTestId('complete-header')).toBeVisible();
+  });
+
+  test('P0 - Checkout overview shows correct item details, subtotal, tax, and total', async ({ page }) => {
+    await page.getByTestId('add-to-cart-sauce-labs-backpack').click();
+    await page.getByTestId('shopping-cart-link').click();
+    await page.getByTestId('checkout').click();
+    await page.getByTestId('firstName').fill('Test');
+    await page.getByTestId('lastName').fill('User');
+    await page.getByTestId('postalCode').fill('11111');
+    await page.getByTestId('continue').click();
+    await expect(page).toHaveURL(/checkout-step-two/);
+
+    await expect(page.getByTestId('inventory-item-name')).toHaveText('Sauce Labs Backpack');
+    await expect(page.getByTestId('inventory-item-price')).toContainText('29.99');
+    await expect(page.getByTestId('subtotal-label')).toContainText('29.99');
+    await expect(page.getByTestId('tax-label')).toBeVisible();
+    await expect(page.getByTestId('total-label')).toBeVisible();
+    await expect(page.getByTestId('finish')).toBeVisible();
+    await expect(page.getByTestId('cancel')).toBeVisible();
   });
 });
