@@ -27,40 +27,13 @@ https://www.saucedemo.com
 - AND I should see the total price calculation
 - AND I should have options to continue shopping or proceed to checkout
 
-### AC2: Checkout Information Entry
-
-- GIVEN I am on the cart page with items
-- WHEN I click the "Checkout" button
-- THEN I should be redirected to the checkout information page
-- AND I should see form fields for First Name, Last Name, and Zip/Postal Code
-- AND all fields should be mandatory
-- WHEN I leave any field empty and click Continue
-- THEN I should see an error message indicating which field is required
-
-### AC3: Order Overview
-
-- GIVEN I have entered valid checkout information
-- WHEN I click the "Continue" button
-- THEN I should be redirected to the checkout overview page
-- AND I should see a summary of all items in my order
-- AND I should see payment and shipping information
-- AND I should see the subtotal, tax, and total amount
-- AND I should have options to Cancel or Finish the order
-
-### AC4: Order Completion
+### AC2: Order Completion
 
 - GIVEN I am on the checkout overview page
 - WHEN I click the "Finish" button
 - THEN I should be redirected to the order confirmation page
 - AND I should see a success message confirming my order
 - AND I should see a "Back Home" button to return to the products page
-
-### AC5: Error Handling
-
-- GIVEN I am on the checkout information page
-- WHEN I enter invalid data (e.g., special characters, incomplete information)
-- THEN I should see appropriate validation error messages
-- AND I should not be able to proceed until all fields are valid
 
 ## Business Rules
 
