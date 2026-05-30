@@ -1,74 +1,81 @@
 import { test, expect } from '@playwright/test';
 
-const APP_URL = process.env.APP_URL || 'https://www.saucedemo.com';
-const USERNAME = process.env.SAUCE_USERNAME || 'standard_user';
-const PASSWORD = process.env.SAUCE_PASSWORD || 'secret_sauce';
+// TC-012, TC-013, TC-014, TC-019, TC-021 — navigation and flow control
 
-test.describe('Navigation and Cancel Flows', () => {
-  test.beforeEach(async ({ page }) => {
-    await page.goto(APP_URL);
-    await page.getByTestId('username').fill(USERNAME);
-    await page.getByTestId('password').fill(PASSWORD);
-    await page.getByTestId('login-button').click();
-    await expect(page).toHaveURL(/inventory\.html/);
-    await page.getByTestId('add-to-cart-sauce-labs-backpack').click();
-  });
+test.beforeEach(async ({ page }) => {
+  await page.goto('/');
+  await page.getByTestId('username').fill('standard_user');
+  await page.getByTestId('password').fill('secret_sauce');
+  await page.getByTestId('login-button').click();
+  await page.waitForURL('**/inventory.html');
+});
 
-  test('TC-012 - P1 - Cancel checkout from step 1 returns to cart', async ({ page }) => {
-    await page.getByTestId('shopping-cart-link').click();
-    await page.getByTestId('checkout').click();
-    await expect(page).toHaveURL(/checkout-step-one\.html/);
+test('TC-012 - P1 - Cancel on checkout step 1 returns to cart', async ({ page }) => {
+  await page.getByTestId('add-to-cart-sauce-labs-backpack').click();
+  await page.getByTestId('shopping-cart-link').click();
+  await page.waitForURL('**/cart.html');
+  await page.getByTestId('checkout').click();
+  await page.waitForURL('**/checkout-step-one.html');
 
-    await page.getByTestId('cancel').click();
-    await expect(page).toHaveURL(/cart\.html/);
-    await expect(page.getByTestId('inventory-item-name').filter({ hasText: 'Sauce Labs Backpack' })).toBeVisible();
-  });
+  await page.getByTestId('firstName').fill('John');
+  await page.getByTestId('cancel').click();
 
-  test('TC-013 - P1 - Cancel checkout from step 2 returns to inventory (FLAG-001)', async ({ page }) => {
-    await page.getByTestId('shopping-cart-link').click();
-    await page.getByTestId('checkout').click();
-    await page.getByTestId('firstName').fill('John');
-    await page.getByTestId('lastName').fill('Doe');
-    await page.getByTestId('postalCode').fill('12345');
-    await page.getByTestId('continue').click();
-    await expect(page).toHaveURL(/checkout-step-two\.html/);
+  await page.waitForURL('**/cart.html');
+  await expect(page.getByTestId('cart-list')).toBeVisible();
+  await expect(page.getByTestId('inventory-item-name').first()).toBeVisible();
+});
 
-    await page.getByTestId('cancel').click();
-    // FLAG-001: Cancel on step 2 returns to /inventory.html, not /cart.html
-    await expect(page).toHaveURL(/inventory\.html/);
-    await expect(page.getByTestId('inventory-container')).toBeVisible();
-    // Cart badge should still reflect the item (cart not cleared)
-    await expect(page.getByTestId('shopping-cart-badge')).toHaveText('1');
-  });
+test('TC-013 - P1 - Cancel on checkout step 2 goes to inventory not cart (defect FI-002)', async ({ page }) => {
+  await page.getByTestId('add-to-cart-sauce-labs-backpack').click();
+  await page.getByTestId('shopping-cart-link').click();
+  await page.waitForURL('**/cart.html');
+  await page.getByTestId('checkout').click();
+  await page.waitForURL('**/checkout-step-one.html');
+  await page.getByTestId('firstName').fill('John');
+  await page.getByTestId('lastName').fill('Doe');
+  await page.getByTestId('postalCode').fill('12345');
+  await page.getByTestId('continue').click();
+  await page.waitForURL('**/checkout-step-two.html');
 
-  test('TC-014 - P1 - Continue shopping from cart returns to inventory', async ({ page }) => {
-    await page.getByTestId('shopping-cart-link').click();
-    await expect(page).toHaveURL(/cart\.html/);
-    await expect(page.getByTestId('inventory-item-name').filter({ hasText: 'Sauce Labs Backpack' })).toBeVisible();
+  await expect(page.getByTestId('title')).toHaveText('Checkout: Overview');
+  await page.getByTestId('cancel').click();
 
-    await page.getByTestId('continue-shopping').click();
-    await expect(page).toHaveURL(/inventory\.html/);
-    await expect(page.getByTestId('inventory-container')).toBeVisible();
-    await expect(page.getByTestId('shopping-cart-badge')).toHaveText('1');
-  });
+  // FI-002: Cancel on overview goes to /inventory.html instead of /cart.html.
+  await expect(page).toHaveURL(/.*inventory\.html/);
+});
 
-  test('TC-017 - P2 - Checkout with empty cart (FLAG-002)', async ({ page }) => {
-    // Navigate to cart without adding any item after the beforeEach item
-    // Remove the item first to get an empty cart
-    await page.getByTestId('remove-sauce-labs-backpack').click();
-    await page.getByTestId('shopping-cart-link').click();
-    await expect(page).toHaveURL(/cart\.html/);
-    await expect(page.getByTestId('cart-list')).toBeVisible();
+test('TC-014 - P1 - Logout via burger menu', async ({ page }) => {
+  await page.getByRole('button', { name: 'Open Menu' }).click();
+  await expect(page.getByTestId('logout-sidebar-link')).toBeVisible();
+  await page.getByTestId('logout-sidebar-link').click();
 
-    await page.getByTestId('checkout').click();
-    // FLAG-002: Checkout with empty cart should block, but app proceeds to step 1
-    // Test documents actual behavior
-    const url = page.url();
-    if (url.includes('checkout-step-one')) {
-      console.log('FLAG-002: Empty cart checkout not blocked — navigated to step 1');
-      await expect(page).toHaveURL(/checkout-step-one\.html/);
-    } else {
-      await expect(page).toHaveURL(/cart\.html/);
-    }
-  });
+  await expect(page).toHaveURL(/.*saucedemo\.com\/?$/);
+  await expect(page.getByTestId('login-button')).toBeVisible();
+
+  await page.goto('/inventory.html');
+  await expect(page).toHaveURL(/.*saucedemo\.com\/?$/);
+});
+
+test('TC-019 - P2 - Cart persists after navigating away via continue shopping', async ({ page }) => {
+  await page.getByTestId('add-to-cart-sauce-labs-backpack').click();
+  await expect(page.getByTestId('shopping-cart-badge')).toHaveText('1');
+
+  await page.getByTestId('shopping-cart-link').click();
+  await page.waitForURL('**/cart.html');
+  await page.getByTestId('continue-shopping').click();
+  await page.waitForURL('**/inventory.html');
+
+  await expect(page.getByTestId('shopping-cart-badge')).toHaveText('1');
+  await page.getByTestId('shopping-cart-link').click();
+  await page.waitForURL('**/cart.html');
+  await expect(page.getByTestId('inventory-item-name').first()).toBeVisible();
+});
+
+test('TC-021 - P2 - Burger menu opens and closes correctly', async ({ page }) => {
+  await page.getByRole('button', { name: 'Open Menu' }).click();
+  await expect(page.getByTestId('logout-sidebar-link')).toBeVisible();
+
+  await page.keyboard.press('Escape');
+  await expect(page.getByTestId('logout-sidebar-link')).not.toBeVisible();
+  await expect(page.getByTestId('inventory-container')).toBeVisible();
 });

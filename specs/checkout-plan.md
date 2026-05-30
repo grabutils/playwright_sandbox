@@ -1,347 +1,572 @@
-# SCRUM-101 Checkout Test Plan
+# SCRUM-101 — E-commerce Checkout Process: Test Plan
 
-## Summary
+**App URL:** https://www.saucedemo.com  
+**Credentials:** username=`standard_user`, password=`secret_sauce`  
+**testIdAttribute:** `data-test` (saucedemo uses `data-test`, NOT `data-testid`)  
+**Date:** 2026-05-30  
+**Author:** QA Planner (AgenticAI Workflow — Run #5)
 
-- **Application URL:** https://www.saucedemo.com
-- **Credentials:** username=`standard_user`, password=`secret_sauce`
-- **Scope:** Full checkout flow — Login → Inventory → Cart → Checkout Step 1 (Info) → Checkout Step 2 (Overview) → Order Complete → Back to Products
-- **Acceptance Criteria (AC):**
-  - AC1: User can add items to cart and proceed to checkout
-  - AC2: User must provide valid first name, last name, and postal code to continue
-  - AC3: Checkout overview displays correct item list, pricing, and totals
-  - AC4: User can complete an order and see confirmation page
-  - AC5: Cancel/back navigation returns user to the appropriate prior page
-  - AC6: Form validation blocks empty or whitespace-only fields
-- **Total Test Cases:** 21
-- **Priority Breakdown:** P0 (6), P1 (9), P2 (6)
+---
+
+## Acceptance Criteria Reference
+
+| AC | Description |
+|----|-------------|
+| AC1 | Cart Review — logged-in user sees items with name/description/price/quantity, subtotal, continue-shopping and checkout buttons |
+| AC2 | Order Completion — Finish button → confirmation page with success message and Back Home button |
+| BR1 | All checkout info form fields are mandatory |
+| BR2 | User must be logged in to access checkout |
+| BR3 | Cart cannot be empty to proceed to checkout |
+| BR4 | Confirmation page clears the cart |
+| BR5 | Cancel at any checkout step returns to cart |
 
 ---
 
 ## Test Cases
 
-### TC-001 — Successful Login with Valid Credentials
-- **Priority:** P0
-- **AC:** AC1
-- **Preconditions:** Browser opened to https://www.saucedemo.com; no prior session
-- **Steps:**
-  1. Navigate to https://www.saucedemo.com → Login page displayed with username and password fields | Locator: `getByTestId('username')`, `getByTestId('password')`
-  2. Fill username field with `standard_user` | Locator: `getByTestId('username')`
-  3. Fill password field with `secret_sauce` | Locator: `getByTestId('password')`
-  4. Click the Login button → User is redirected to `/inventory.html` | Locator: `getByTestId('login-button')`
-- **Expected Result:** Page URL becomes `https://www.saucedemo.com/inventory.html`; product grid is visible with at least 6 items
-- **Test data:** username=`standard_user`, password=`secret_sauce`
+---
+
+### TC-001
+
+**ID:** TC-001  
+**Priority:** P0  
+**Title:** Successful login with valid credentials  
+**AC:** BR2
+
+**Test Data:**
+- username: `standard_user`
+- password: `secret_sauce`
+
+**Steps:**
+
+1. Navigate to `https://www.saucedemo.com`.
+   - Expected: Login page loads; `getByTestId('username')`, `getByTestId('password')`, `getByTestId('login-button')` visible.
+2. Fill `getByTestId('username')` with `standard_user`.
+3. Fill `getByTestId('password')` with `secret_sauce`.
+4. Click `getByTestId('login-button')`.
+   - Expected: Navigates to `/inventory.html`; `getByTestId('inventory-container')` visible; `getByTestId('title')` reads "Products".
+
+**Success Criteria:** User is on inventory page with products listed.
 
 ---
 
-### TC-002 — Add Single Item to Cart from Inventory Page
-- **Priority:** P0
-- **AC:** AC1
-- **Preconditions:** Logged in as `standard_user`; on `/inventory.html`
-- **Steps:**
-  1. Locate the "Sauce Labs Backpack" product card | Locator: `getByTestId('inventory-item')`
-  2. Click "Add to cart" button for Sauce Labs Backpack → Button label changes to "Remove" | Locator: `getByTestId('add-to-cart-sauce-labs-backpack')`
-  3. Observe the cart icon badge in the top-right header → Badge displays "1" | Locator: `getByTestId('shopping-cart-badge')`
-- **Expected Result:** Cart badge shows "1"; button for Sauce Labs Backpack reads "Remove"
-- **Test data:** Item: Sauce Labs Backpack ($29.99)
+### TC-002
+
+**ID:** TC-002  
+**Priority:** P0  
+**Title:** Add single item to cart and verify cart badge updates  
+**AC:** AC1
+
+**Test Data:**
+- Item: Sauce Labs Backpack
+
+**Steps:**
+
+1. Log in with valid credentials.
+2. Confirm `getByTestId('shopping-cart-badge')` is NOT present.
+3. Click `getByTestId('add-to-cart-sauce-labs-backpack')`.
+   - Expected: Button label changes to "Remove"; `getByTestId('shopping-cart-badge')` shows `1`.
+4. Verify `getByTestId('shopping-cart-badge')` text equals `"1"`.
+
+**Success Criteria:** Cart badge shows `1` after adding one item.
 
 ---
 
-### TC-003 — Add Multiple Items to Cart
-- **Priority:** P0
-- **AC:** AC1
-- **Preconditions:** Logged in as `standard_user`; on `/inventory.html`; cart is empty
-- **Steps:**
-  1. Click "Add to cart" for Sauce Labs Backpack → Badge shows "1" | Locator: `getByTestId('add-to-cart-sauce-labs-backpack')`
-  2. Click "Add to cart" for Sauce Labs Bike Light → Badge shows "2" | Locator: `getByTestId('add-to-cart-sauce-labs-bike-light')`
-  3. Click the shopping cart icon → Navigates to `/cart.html` | Locator: `getByTestId('shopping-cart-link')`
-  4. Verify both items are listed in the cart | Locator: `getByTestId('cart-item')`
-- **Expected Result:** Cart page shows 2 items: Sauce Labs Backpack and Sauce Labs Bike Light with correct names and prices
-- **Test data:** Items: Sauce Labs Backpack ($29.99), Sauce Labs Bike Light ($9.99)
+### TC-003
+
+**ID:** TC-003  
+**Priority:** P0  
+**Title:** Full happy-path checkout with a single item  
+**AC:** AC1, AC2, BR1, BR4
+
+**Test Data:**
+- Item: Sauce Labs Backpack
+- First Name: `John`, Last Name: `Doe`, Postal Code: `12345`
+
+**Steps:**
+
+1. Log in; land on `/inventory.html`.
+2. Click `getByTestId('add-to-cart-sauce-labs-backpack')` — badge shows `1`.
+3. Click `getByTestId('shopping-cart-link')` — URL `/cart.html`; `getByTestId('cart-list')` shows one item.
+4. Click `getByTestId('checkout')` — URL `/checkout-step-one.html`; `getByTestId('title')` reads "Checkout: Your Information".
+5. Fill `getByTestId('firstName')` with `John`.
+6. Fill `getByTestId('lastName')` with `Doe`.
+7. Fill `getByTestId('postalCode')` with `12345`.
+8. Click `getByTestId('continue')` — URL `/checkout-step-two.html`; `getByTestId('title')` reads "Checkout: Overview".
+9. Verify `getByTestId('subtotal-label')` visible with dollar amount.
+10. Verify `getByTestId('tax-label')` visible with dollar amount.
+11. Verify `getByTestId('total-label')` visible with dollar amount.
+12. Click `getByTestId('finish')` — URL `/checkout-complete.html`.
+13. Verify `getByTestId('complete-header')` text = `"Thank you for your order!"`.
+14. Verify `getByTestId('complete-text')` visible.
+15. Verify `getByTestId('back-to-products')` visible.
+16. Verify `getByTestId('shopping-cart-badge')` NOT present (cart cleared).
+
+**Success Criteria:** Confirmation page shows success message; cart badge absent.
 
 ---
 
-### TC-004 — Navigate to Cart via Cart Icon
-- **Priority:** P0
-- **AC:** AC1
-- **Preconditions:** Logged in; at least 1 item in cart; on any page
-- **Steps:**
-  1. Click the shopping cart icon in the header | Locator: `getByTestId('shopping-cart-link')`
-  2. Verify URL changes to `/cart.html` → Cart page is displayed
-  3. Confirm "Your Cart" heading is visible | Locator: `getByRole('heading', { name: 'Your Cart' })`
-  4. Confirm cart list container is present | Locator: `getByTestId('cart-list')`
-- **Expected Result:** URL is `/cart.html`; cart contents are displayed; "Checkout" and "Continue Shopping" buttons are visible
+### TC-004
+
+**ID:** TC-004  
+**Priority:** P0  
+**Title:** Full happy-path checkout with multiple items  
+**AC:** AC1, AC2, BR1, BR4
+
+**Test Data:**
+- Items: Sauce Labs Backpack, Sauce Labs Bike Light
+- First Name: `Jane`, Last Name: `Smith`, Postal Code: `90210`
+
+**Steps:**
+
+1. Log in; land on `/inventory.html`.
+2. Click `getByTestId('add-to-cart-sauce-labs-backpack')`.
+3. Click `getByTestId('add-to-cart-sauce-labs-bike-light')` — badge shows `2`.
+4. Click `getByTestId('shopping-cart-link')` — cart shows two items.
+5. Click `getByTestId('checkout')`.
+6. Fill info: `Jane` / `Smith` / `90210`; click `getByTestId('continue')`.
+7. On overview: verify both `getByTestId('inventory-item-name')` elements visible.
+8. Click `getByTestId('finish')` — URL `/checkout-complete.html`.
+9. Verify `getByTestId('complete-header')` = `"Thank you for your order!"`.
+10. Verify `getByTestId('shopping-cart-badge')` NOT present.
+
+**Success Criteria:** Multi-item order completes; cart clears.
 
 ---
 
-### TC-005 — Happy Path: Full Checkout Flow End-to-End
-- **Priority:** P0
-- **AC:** AC1, AC2, AC3, AC4
-- **Preconditions:** Logged in as `standard_user`; cart is empty
-- **Steps:**
-  1. On `/inventory.html`, click "Add to cart" for Sauce Labs Backpack | Locator: `getByTestId('add-to-cart-sauce-labs-backpack')`
-  2. Click cart icon → Navigate to `/cart.html` | Locator: `getByTestId('shopping-cart-link')`
-  3. Click "Checkout" button → Navigate to `/checkout-step-one.html` | Locator: `getByTestId('checkout')`
-  4. Fill "First Name" field with `John` | Locator: `getByTestId('firstName')`
-  5. Fill "Last Name" field with `Doe` | Locator: `getByTestId('lastName')`
-  6. Fill "Zip/Postal Code" field with `12345` | Locator: `getByTestId('postalCode')`
-  7. Click "Continue" button → Navigate to `/checkout-step-two.html` | Locator: `getByTestId('continue')`
-  8. Verify order summary shows Sauce Labs Backpack at $29.99
-  9. Verify "Item total", "Tax", and "Total" values are displayed | Locator: `getByTestId('subtotal-label')`, `getByTestId('tax-label')`, `getByTestId('total-label')`
-  10. Click "Finish" button → Navigate to `/checkout-complete.html` | Locator: `getByTestId('finish')`
-  11. Verify confirmation heading reads "Thank you for your order!" | Locator: `getByTestId('complete-header')`
-  12. Verify confirmation text is present | Locator: `getByTestId('complete-text')`
-- **Expected Result:** User reaches `/checkout-complete.html` with "Thank you for your order!" message; order is placed successfully
-- **Test data:** First Name=`John`, Last Name=`Doe`, Postal Code=`12345`
+### TC-005
+
+**ID:** TC-005  
+**Priority:** P0  
+**Title:** Verify cart item details (name, description, price, quantity)  
+**AC:** AC1
+
+**Test Data:**
+- Item: Sauce Labs Backpack
+
+**Steps:**
+
+1. Log in; add Sauce Labs Backpack; click `getByTestId('shopping-cart-link')`.
+2. Verify `getByTestId('inventory-item-name')` visible and non-empty.
+3. Verify `getByTestId('inventory-item-desc')` visible and non-empty.
+4. Verify `getByTestId('inventory-item-price')` text matches `$XX.XX`.
+5. Verify `getByTestId('item-quantity')` shows `1`.
+6. Verify `getByTestId('continue-shopping')` visible.
+7. Verify `getByTestId('checkout')` visible.
+
+**Success Criteria:** All four item attributes display; both action buttons present.
 
 ---
 
-### TC-006 — Return to Inventory After Order Completion
-- **Priority:** P0
-- **AC:** AC4, AC5
-- **Preconditions:** User has just completed checkout; on `/checkout-complete.html`
-- **Steps:**
-  1. Verify "Back Home" button is present | Locator: `getByTestId('back-to-products')`
-  2. Click "Back Home" button → Navigate to `/inventory.html` | Locator: `getByTestId('back-to-products')`
-  3. Verify inventory page is displayed with product grid
-  4. Verify cart badge is absent (cart cleared after order)
-- **Expected Result:** User is on `/inventory.html`; cart is empty; all "Add to cart" buttons are in default state
+### TC-006
+
+**ID:** TC-006  
+**Priority:** P0  
+**Title:** Order confirmation page details are complete  
+**AC:** AC2
+
+**Steps:**
+
+1. Complete full checkout (TC-003 flow); arrive at `/checkout-complete.html`.
+2. Verify `getByTestId('title')` text = `"Checkout: Complete!"`.
+3. Verify `getByTestId('complete-header')` text = `"Thank you for your order!"`.
+4. Verify `getByTestId('complete-text')` visible and non-empty.
+5. Verify `getByTestId('back-to-products')` visible and enabled.
+6. Click `getByTestId('back-to-products')` — URL `/inventory.html`; `getByTestId('inventory-container')` visible.
+
+**Success Criteria:** All confirmation elements render; Back Home navigates to inventory.
 
 ---
 
-### TC-007 — Login Failure: Invalid Username
-- **Priority:** P1
-- **AC:** AC1
-- **Preconditions:** Browser on https://www.saucedemo.com; no active session
-- **Steps:**
-  1. Fill username with `invalid_user` | Locator: `getByTestId('username')`
-  2. Fill password with `secret_sauce` | Locator: `getByTestId('password')`
-  3. Click "Login" button | Locator: `getByTestId('login-button')`
-  4. Verify error message is displayed | Locator: `getByTestId('error')`
-- **Expected Result:** Error message reads "Epic sadface: Username and password do not match any user in this service"; user remains on login page
-- **Test data:** username=`invalid_user`, password=`secret_sauce`
+### TC-007
+
+**ID:** TC-007  
+**Priority:** P1  
+**Title:** Login fails with invalid credentials  
+**AC:** BR2
+
+**Test Data:**
+- username: `wrong_user`, password: `wrong_pass`
+
+**Steps:**
+
+1. Navigate to `https://www.saucedemo.com`.
+2. Fill username `wrong_user`, password `wrong_pass`.
+3. Click `getByTestId('login-button')`.
+   - Expected: URL stays at `/`; `getByTestId('error')` visible.
+4. Verify error text includes "Username and password do not match".
+5. Verify `getByTestId('inventory-container')` NOT visible.
+
+**Success Criteria:** Error shown; user stays on login page.
 
 ---
 
-### TC-008 — Login Failure: Empty Credentials
-- **Priority:** P1
-- **AC:** AC1
-- **Preconditions:** Browser on https://www.saucedemo.com
-- **Steps:**
-  1. Leave username and password fields empty
-  2. Click "Login" button | Locator: `getByTestId('login-button')`
-  3. Verify error message is shown | Locator: `getByTestId('error')`
-- **Expected Result:** Error message reads "Epic sadface: Username is required"; user stays on login page
+### TC-008
+
+**ID:** TC-008  
+**Priority:** P1  
+**Title:** Empty cart checkout navigates to step 1 without blocking (known defect FI-001)  
+**AC:** BR3
+
+**Steps:**
+
+1. Log in; confirm `getByTestId('shopping-cart-badge')` NOT present.
+2. Click `getByTestId('shopping-cart-link')` — `/cart.html` with no items.
+3. Click `getByTestId('checkout')`.
+   - **Known Defect FI-001:** App navigates to `/checkout-step-one.html` instead of blocking.
+4. Verify URL is `/checkout-step-one.html` (documenting actual behavior).
+
+**Expected (ideal):** Error shown or checkout disabled for empty cart.  
+**Actual (defect):** Proceeds to checkout step 1 with no items.
 
 ---
 
-### TC-009 — Checkout Step 1: Submit With All Fields Empty
-- **Priority:** P1
-- **AC:** AC2
-- **Preconditions:** Logged in; 1+ items in cart; on `/checkout-step-one.html`
-- **Steps:**
-  1. Leave First Name, Last Name, and Postal Code fields empty
-  2. Click "Continue" button | Locator: `getByTestId('continue')`
-  3. Verify error message is displayed | Locator: `getByTestId('error')`
-- **Expected Result:** Error message reads "Error: First Name is required"; user remains on `/checkout-step-one.html`
-- **Test data:** All fields blank
+### TC-009
+
+**ID:** TC-009  
+**Priority:** P1  
+**Title:** Missing first name triggers validation error  
+**AC:** BR1
+
+**Test Data:** First Name: (empty), Last Name: `Doe`, Postal Code: `12345`
+
+**Steps:**
+
+1. Log in; add Sauce Labs Backpack; navigate to `/checkout-step-one.html`.
+2. Leave `getByTestId('firstName')` empty.
+3. Fill `getByTestId('lastName')` with `Doe`; fill `getByTestId('postalCode')` with `12345`.
+4. Click `getByTestId('continue')`.
+   - Expected: URL stays `/checkout-step-one.html`; `getByTestId('error')` visible.
+5. Verify error text includes "First Name is required".
+
+**Success Criteria:** Error displayed; form not submitted.
 
 ---
 
-### TC-010 — Checkout Step 1: Submit With Missing Last Name
-- **Priority:** P1
-- **AC:** AC2
-- **Preconditions:** Logged in; 1+ items in cart; on `/checkout-step-one.html`
-- **Steps:**
-  1. Fill "First Name" with `John` | Locator: `getByTestId('firstName')`
-  2. Leave "Last Name" empty
-  3. Leave "Postal Code" empty
-  4. Click "Continue" | Locator: `getByTestId('continue')`
-  5. Verify error message appears | Locator: `getByTestId('error')`
-- **Expected Result:** Error message reads "Error: Last Name is required"; user remains on step 1
-- **Test data:** First Name=`John`
+### TC-010
+
+**ID:** TC-010  
+**Priority:** P1  
+**Title:** Missing last name triggers validation error  
+**AC:** BR1
+
+**Test Data:** First Name: `John`, Last Name: (empty), Postal Code: `12345`
+
+**Steps:**
+
+1. Log in; add Sauce Labs Backpack; navigate to `/checkout-step-one.html`.
+2. Fill `getByTestId('firstName')` with `John`; leave `getByTestId('lastName')` empty; fill `getByTestId('postalCode')` with `12345`.
+3. Click `getByTestId('continue')`.
+   - Expected: `getByTestId('error')` visible with "Last Name is required".
+
+**Success Criteria:** Error displayed; form not submitted.
 
 ---
 
-### TC-011 — Checkout Step 1: Submit With Missing Postal Code
-- **Priority:** P1
-- **AC:** AC2
-- **Preconditions:** Logged in; 1+ items in cart; on `/checkout-step-one.html`
-- **Steps:**
-  1. Fill "First Name" with `John` | Locator: `getByTestId('firstName')`
-  2. Fill "Last Name" with `Doe` | Locator: `getByTestId('lastName')`
-  3. Leave "Postal Code" empty
-  4. Click "Continue" | Locator: `getByTestId('continue')`
-  5. Verify error message appears | Locator: `getByTestId('error')`
-- **Expected Result:** Error message reads "Error: Postal Code is required"; user remains on step 1
-- **Test data:** First Name=`John`, Last Name=`Doe`
+### TC-011
+
+**ID:** TC-011  
+**Priority:** P1  
+**Title:** Missing postal code triggers validation error  
+**AC:** BR1
+
+**Test Data:** First Name: `John`, Last Name: `Doe`, Postal Code: (empty)
+
+**Steps:**
+
+1. Log in; add Sauce Labs Backpack; navigate to `/checkout-step-one.html`.
+2. Fill `getByTestId('firstName')` with `John`; fill `getByTestId('lastName')` with `Doe`; leave `getByTestId('postalCode')` empty.
+3. Click `getByTestId('continue')`.
+   - Expected: `getByTestId('error')` visible with "Postal Code is required".
+
+**Success Criteria:** Error displayed; form not submitted.
 
 ---
 
-### TC-012 — Cancel Checkout from Step 1 Returns to Cart
-- **Priority:** P1
-- **AC:** AC5
-- **Preconditions:** Logged in; 1+ items in cart; on `/checkout-step-one.html`
-- **Steps:**
-  1. Optionally fill in some form data (partial entry)
-  2. Click "Cancel" button | Locator: `getByTestId('cancel')`
-  3. Verify URL changes to `/cart.html`
-  4. Verify cart still contains the previously added items
-- **Expected Result:** User is returned to `/cart.html`; cart contents are unchanged
+### TC-012
+
+**ID:** TC-012  
+**Priority:** P1  
+**Title:** Cancel on checkout step 1 returns to cart  
+**AC:** BR5
+
+**Steps:**
+
+1. Log in; add Sauce Labs Backpack; navigate to `/checkout-step-one.html`.
+2. Fill `getByTestId('firstName')` with `John` (partial).
+3. Click `getByTestId('cancel')`.
+   - Expected: URL `/cart.html`; `getByTestId('inventory-item-name')` still visible in cart.
+
+**Success Criteria:** Returns to cart with item still present.
 
 ---
 
-### TC-013 — Cancel Checkout from Step 2 Returns to Inventory
-- **Priority:** P1
-- **AC:** AC5
-- **Preconditions:** Logged in; 1+ items in cart; on `/checkout-step-two.html`
-- **Steps:**
-  1. Navigate through checkout to `/checkout-step-two.html`
-  2. Click "Cancel" button | Locator: `getByTestId('cancel')`
-  3. Verify URL changes to `/inventory.html`
-  4. Verify inventory page with product grid is displayed
-- **Expected Result:** User is redirected to `/inventory.html`; cart badge still shows item count
-- **Note (FLAG-001):** Cancel on step 2 returns to inventory, not cart — flagged as UX inconsistency
+### TC-013
+
+**ID:** TC-013  
+**Priority:** P1  
+**Title:** Cancel on checkout step 2 goes to inventory not cart (known defect FI-002)  
+**AC:** BR5
+
+**Test Data:** Item: Sauce Labs Backpack; First Name: `John`, Last Name: `Doe`, Postal Code: `12345`
+
+**Steps:**
+
+1. Log in; add Sauce Labs Backpack; complete checkout info form; arrive at `/checkout-step-two.html`.
+2. Verify `getByTestId('title')` = "Checkout: Overview".
+3. Click `getByTestId('cancel')`.
+   - **Known Defect FI-002:** Navigates to `/inventory.html` instead of `/cart.html`.
+4. Verify actual URL (documents defect).
+
+**Expected (ideal):** `/cart.html` per BR5.  
+**Actual (defect):** `/inventory.html`.
 
 ---
 
-### TC-014 — Continue Shopping from Cart Returns to Inventory
-- **Priority:** P1
-- **AC:** AC5
-- **Preconditions:** Logged in; on `/cart.html`
-- **Steps:**
-  1. Click "Continue Shopping" button | Locator: `getByTestId('continue-shopping')`
-  2. Verify URL changes to `/inventory.html`
-  3. Verify product grid is visible
-  4. Verify cart badge still reflects previously added items
-- **Expected Result:** User is on `/inventory.html`; items in cart are preserved
+### TC-014
+
+**ID:** TC-014  
+**Priority:** P1  
+**Title:** Logout via burger menu  
+**AC:** BR2
+
+**Steps:**
+
+1. Log in; land on `/inventory.html`.
+2. Click `getByRole('button', { name: 'Open Menu' })` — sidebar opens; `getByTestId('logout-sidebar-link')` visible.
+3. Click `getByTestId('logout-sidebar-link')`.
+   - Expected: URL `/`; login form visible.
+4. Navigate to `/inventory.html` directly — redirected back to login.
+
+**Success Criteria:** User fully logged out; protected routes redirect to login.
 
 ---
 
-### TC-015 — Remove Item from Cart
-- **Priority:** P1
-- **AC:** AC1
-- **Preconditions:** Logged in; 2 items in cart (Backpack + Bike Light); on `/cart.html`
-- **Steps:**
-  1. Note the number of items displayed (2)
-  2. Click the "Remove" button for Sauce Labs Backpack | Locator: `getByTestId('remove-sauce-labs-backpack')`
-  3. Verify that item is no longer listed in the cart
-  4. Verify cart badge decrements to "1" | Locator: `getByTestId('shopping-cart-badge')`
-- **Expected Result:** Removed item disappears from cart; badge count decreases; Sauce Labs Bike Light still shown
+### TC-015
+
+**ID:** TC-015  
+**Priority:** P1  
+**Title:** Remove item from cart  
+**AC:** AC1
+
+**Steps:**
+
+1. Log in; add Sauce Labs Backpack; click `getByTestId('shopping-cart-link')`.
+2. Verify `getByTestId('shopping-cart-badge')` shows `1`; item visible in `getByTestId('cart-list')`.
+3. Click `getByTestId('remove-sauce-labs-backpack')`.
+   - Expected: Item row gone; `getByTestId('shopping-cart-badge')` NOT present.
+4. Verify cart-list contains no item rows.
+
+**Success Criteria:** Cart empty after removal; badge disappears.
 
 ---
 
-### TC-016 — Checkout Step 2 Displays Correct Order Summary
-- **Priority:** P1
-- **AC:** AC3
-- **Preconditions:** Logged in; Sauce Labs Backpack ($29.99) in cart; completing checkout step 1
-- **Steps:**
-  1. Complete checkout step 1 with valid info
-  2. On step 2, verify item name "Sauce Labs Backpack" is listed | Locator: `getByTestId('inventory-item-name')`
-  3. Verify item price is `$29.99` | Locator: `getByTestId('inventory-item-price')`
-  4. Verify "Item total: $29.99" label is shown | Locator: `getByTestId('subtotal-label')`
-  5. Verify "Tax:" label is shown | Locator: `getByTestId('tax-label')`
-  6. Verify "Total:" label with dollar amount is shown | Locator: `getByTestId('total-label')`
-- **Expected Result:** All pricing, item details, and order meta-information are accurately displayed
-- **Test data:** Item: Sauce Labs Backpack, $29.99; First Name=`John`, Last Name=`Doe`, Postal Code=`12345`
+### TC-016
+
+**ID:** TC-016  
+**Priority:** P2  
+**Title:** Cart badge count handles two items (boundary)  
+**AC:** AC1
+
+**Test Data:** Items: Sauce Labs Backpack, Sauce Labs Bike Light
+
+**Steps:**
+
+1. Log in; confirm badge NOT present.
+2. Click `getByTestId('add-to-cart-sauce-labs-backpack')` — badge shows `1`.
+3. Click `getByTestId('add-to-cart-sauce-labs-bike-light')` — badge shows `2`.
+4. Click `getByTestId('shopping-cart-link')`.
+5. Verify two item rows in `getByTestId('cart-list')`.
+
+**Success Criteria:** Badge accurately shows `2`; both items in cart.
 
 ---
 
-### TC-017 — Checkout with Empty Cart (Direct Navigation)
-- **Priority:** P2
-- **AC:** AC1
-- **Preconditions:** Logged in as `standard_user`; cart is empty
-- **Steps:**
-  1. Navigate directly to `/cart.html` (no items added)
-  2. Verify cart shows no items
-  3. Click "Checkout" button | Locator: `getByTestId('checkout')`
-  4. Observe behavior — whether app allows proceeding or shows a warning
-- **Expected Result (FLAG-002):** App should block or warn, but currently allows navigating to step 1 with empty cart
-- **Test data:** Empty cart
+### TC-017
+
+**ID:** TC-017  
+**Priority:** P2  
+**Title:** Whitespace-only first name accepted without validation (known defect FI-003)  
+**AC:** BR1
+
+**Test Data:** First Name: `   ` (spaces), Last Name: `Doe`, Postal Code: `12345`
+
+**Steps:**
+
+1. Log in; add Sauce Labs Backpack; navigate to `/checkout-step-one.html`.
+2. Fill `getByTestId('firstName')` with `   ` (spaces only).
+3. Fill `getByTestId('lastName')` with `Doe`; fill `getByTestId('postalCode')` with `12345`.
+4. Click `getByTestId('continue')`.
+   - **Known Defect FI-003:** App proceeds to `/checkout-step-two.html` without error.
+
+**Expected (ideal):** Validation error shown.  
+**Actual (defect):** Form submits with whitespace-only first name.
 
 ---
 
-### TC-018 — Checkout Step 1: Whitespace-Only Field Values
-- **Priority:** P2
-- **AC:** AC2, AC6
-- **Preconditions:** Logged in; 1+ items in cart; on `/checkout-step-one.html`
-- **Steps:**
-  1. Fill "First Name" with `   ` (spaces only) | Locator: `getByTestId('firstName')`
-  2. Fill "Last Name" with `   ` (spaces only) | Locator: `getByTestId('lastName')`
-  3. Fill "Postal Code" with `   ` (spaces only) | Locator: `getByTestId('postalCode')`
-  4. Click "Continue" | Locator: `getByTestId('continue')`
-  5. Observe whether form validates or allows proceeding
-- **Expected Result (FLAG-003):** Whitespace-only fields should fail validation; currently app may proceed to step 2
+### TC-018
+
+**ID:** TC-018  
+**Priority:** P2  
+**Title:** Price totals math — subtotal + tax = total  
+**AC:** AC1, AC2
+
+**Test Data:** Items: Sauce Labs Backpack ($29.99), Sauce Labs Bike Light ($9.99) — subtotal $39.98
+
+**Steps:**
+
+1. Log in; add both items; proceed through checkout info (`John`/`Doe`/`12345`); arrive at overview.
+2. Read `getByTestId('subtotal-label')` — parse dollar amount; expect `$39.98`.
+3. Read `getByTestId('tax-label')` — parse dollar amount (> $0.00).
+4. Read `getByTestId('total-label')` — parse dollar amount.
+5. Verify: subtotal + tax ≈ total (±$0.01).
+
+**Success Criteria:** Total = subtotal + tax with no unexpected rounding.
 
 ---
 
-### TC-019 — Checkout Step 1: Special Characters in Name Fields
-- **Priority:** P2
-- **AC:** AC2
-- **Preconditions:** Logged in; 1+ items in cart; on `/checkout-step-one.html`
-- **Steps:**
-  1. Fill "First Name" with `O'Brien` | Locator: `getByTestId('firstName')`
-  2. Fill "Last Name" with `Smith-Jones` | Locator: `getByTestId('lastName')`
-  3. Fill "Postal Code" with `AB1 2CD` | Locator: `getByTestId('postalCode')`
-  4. Click "Continue" | Locator: `getByTestId('continue')`
-  5. Verify navigation to step 2 succeeds and values display correctly
-- **Expected Result:** App accepts valid special characters (apostrophe, hyphen, space in postal code); navigates to overview correctly
+### TC-019
+
+**ID:** TC-019  
+**Priority:** P2  
+**Title:** Cart persists after navigating away via continue shopping  
+**AC:** AC1
+
+**Steps:**
+
+1. Log in; add Sauce Labs Backpack — badge shows `1`.
+2. Click `getByTestId('shopping-cart-link')`.
+3. Click `getByTestId('continue-shopping')` — URL `/inventory.html`; badge still shows `1`.
+4. Click `getByTestId('shopping-cart-link')` again.
+5. Verify Sauce Labs Backpack still in cart (`getByTestId('inventory-item-name')` visible).
+
+**Success Criteria:** Item preserved after continue-shopping navigation.
 
 ---
 
-### TC-020 — Cart Badge Count Accuracy with Multiple Add/Remove
-- **Priority:** P2
-- **AC:** AC1
-- **Preconditions:** Logged in; on `/inventory.html`; cart is empty
-- **Steps:**
-  1. Add Sauce Labs Backpack → Badge shows "1" | Locator: `getByTestId('add-to-cart-sauce-labs-backpack')`
-  2. Add Sauce Labs Bike Light → Badge shows "2" | Locator: `getByTestId('add-to-cart-sauce-labs-bike-light')`
-  3. Add Sauce Labs Bolt T-Shirt → Badge shows "3" | Locator: `getByTestId('add-to-cart-sauce-labs-bolt-t-shirt')`
-  4. Navigate to cart and remove Sauce Labs Bike Light | Locator: `getByTestId('remove-sauce-labs-bike-light')`
-  5. Navigate back to inventory → Badge shows "2"
-  6. Remove Sauce Labs Backpack from inventory | Locator: `getByTestId('remove-sauce-labs-backpack')`
-  7. Badge shows "1"
-- **Expected Result:** Cart badge always accurately reflects the current number of items
+### TC-020
+
+**ID:** TC-020  
+**Priority:** P2  
+**Title:** Cart clears after order is completed  
+**AC:** BR4
+
+**Steps:**
+
+1. Complete full checkout (TC-003); arrive at `/checkout-complete.html`.
+2. Verify `getByTestId('shopping-cart-badge')` NOT present.
+3. Click `getByTestId('back-to-products')` — `/inventory.html`.
+4. Verify badge still NOT present.
+5. Click `getByTestId('shopping-cart-link')` — `/cart.html` with no items.
+
+**Success Criteria:** Cart empty after order; persists as empty on inventory.
 
 ---
 
-### TC-021 — Multiple Items Checkout: Total Price Calculation Accuracy
-- **Priority:** P2
-- **AC:** AC1, AC3
-- **Preconditions:** Logged in; cart is empty; on `/inventory.html`
-- **Steps:**
-  1. Add Sauce Labs Backpack ($29.99) | Locator: `getByTestId('add-to-cart-sauce-labs-backpack')`
-  2. Add Sauce Labs Bike Light ($9.99) | Locator: `getByTestId('add-to-cart-sauce-labs-bike-light')`
-  3. Navigate to cart; verify both items listed
-  4. Proceed through checkout step 1 with valid info (First=`Jane`, Last=`Smith`, Postal=`90210`)
-  5. On step 2, verify both items are listed in the summary
-  6. Verify "Item total: $39.98" is shown | Locator: `getByTestId('subtotal-label')`
-  7. Verify "Total:" includes tax on top of $39.98 | Locator: `getByTestId('total-label')`
-- **Expected Result:** Item total = $39.98; Total = $39.98 + tax; all values mathematically correct
+### TC-021
+
+**ID:** TC-021  
+**Priority:** P2  
+**Title:** Burger menu opens and closes correctly  
+**AC:** (Navigation UX)
+
+**Steps:**
+
+1. Log in; land on `/inventory.html`.
+2. Click `getByRole('button', { name: 'Open Menu' })` — sidebar visible; `getByTestId('logout-sidebar-link')` visible.
+3. Press Escape — sidebar closes; `getByTestId('logout-sidebar-link')` NOT visible.
+4. Verify `getByTestId('inventory-container')` still visible.
+
+**Success Criteria:** Menu opens and closes; page state intact.
+
+---
+
+### TC-022
+
+**ID:** TC-022  
+**Priority:** P2  
+**Title:** Multi-item cart review shows all items with correct details  
+**AC:** AC1
+
+**Test Data:** Items: Sauce Labs Backpack ($29.99), Sauce Labs Bike Light ($9.99)
+
+**Steps:**
+
+1. Log in; add both items; click `getByTestId('shopping-cart-link')` — badge `2`.
+2. Verify two item rows in `getByTestId('cart-list')`.
+3. For each row: `getByTestId('inventory-item-name')` non-empty, `getByTestId('inventory-item-desc')` non-empty, `getByTestId('inventory-item-price')` matches `$XX.XX`, `getByTestId('item-quantity')` = `1`.
+4. Verify `getByTestId('continue-shopping')` and `getByTestId('checkout')` visible.
+
+**Success Criteria:** Both items fully described; action buttons present.
+
+---
+
+### TC-023
+
+**ID:** TC-023  
+**Priority:** P2  
+**Title:** No order reference number on confirmation page (known defect FI-004)  
+**AC:** AC2
+
+**Steps:**
+
+1. Complete full checkout; arrive at `/checkout-complete.html`.
+2. Verify `getByTestId('complete-header')` and `getByTestId('complete-text')` contain no numeric order reference.
+   - **Known Defect FI-004:** No order reference number shown.
+
+**Expected (ideal):** Unique order ID visible.  
+**Actual (defect):** No order reference number present.
 
 ---
 
 ## Flagged Issues
 
-### FLAG-001 — Cancel on Step 2 Redirects to Inventory Instead of Cart
-- **Severity:** Medium
-- **Location:** `/checkout-step-two.html` → Cancel button (`getByTestId('cancel')`)
-- **Observed:** Clicking Cancel on overview navigates to `/inventory.html` not `/cart.html`
-- **Expected:** Should return to `/cart.html` so user can modify cart before retrying
+| ID | Severity | Description |
+|----|----------|-------------|
+| FI-001 | Medium | Empty cart checkout not blocked — clicking Checkout on an empty cart navigates to `/checkout-step-one.html`. Expected: error or disabled button. |
+| FI-002 | Medium | Cancel on overview (step 2) navigates to `/inventory.html` instead of `/cart.html`. Violates BR5. |
+| FI-003 | Low | Whitespace-only first name accepted by info form. Expected: trim-and-reject. |
+| FI-004 | Low | No order reference number on confirmation page. |
 
-### FLAG-002 — Empty Cart Does Not Block Checkout Initiation
-- **Severity:** Medium
-- **Location:** `/cart.html` → Checkout button (`getByTestId('checkout')`)
-- **Observed:** Checkout button is active on empty cart; proceeds to step 1 with no items
-- **Expected:** Button should be disabled or warn when cart is empty
+---
 
-### FLAG-003 — Whitespace-Only Input May Pass Front-End Validation
-- **Severity:** Low
-- **Location:** `/checkout-step-one.html` — firstName, lastName, postalCode fields
-- **Observed:** Form may accept whitespace-only values as non-empty
-- **Expected:** Fields with only whitespace should trigger "is required" errors
+## Selector Reference
 
-### FLAG-004 — No Order Reference Number on Confirmation Page
-- **Severity:** Low
-- **Location:** `/checkout-complete.html`
-- **Observed:** No order number or reference ID shown after purchase
-- **Expected:** Unique reference ID for order tracking
+| Element | Selector |
+|---------|----------|
+| Username input | `getByTestId('username')` |
+| Password input | `getByTestId('password')` |
+| Login button | `getByTestId('login-button')` |
+| Cart link | `getByTestId('shopping-cart-link')` |
+| Cart badge | `getByTestId('shopping-cart-badge')` |
+| Add backpack | `getByTestId('add-to-cart-sauce-labs-backpack')` |
+| Add bike light | `getByTestId('add-to-cart-sauce-labs-bike-light')` |
+| Remove backpack | `getByTestId('remove-sauce-labs-backpack')` |
+| Item name | `getByTestId('inventory-item-name')` |
+| Item description | `getByTestId('inventory-item-desc')` |
+| Item price | `getByTestId('inventory-item-price')` |
+| Item quantity | `getByTestId('item-quantity')` |
+| Continue shopping | `getByTestId('continue-shopping')` |
+| Checkout button | `getByTestId('checkout')` |
+| First name | `getByTestId('firstName')` |
+| Last name | `getByTestId('lastName')` |
+| Postal code | `getByTestId('postalCode')` |
+| Continue (info form) | `getByTestId('continue')` |
+| Cancel | `getByTestId('cancel')` |
+| Error container | `getByTestId('error')` |
+| Subtotal label | `getByTestId('subtotal-label')` |
+| Tax label | `getByTestId('tax-label')` |
+| Total label | `getByTestId('total-label')` |
+| Finish button | `getByTestId('finish')` |
+| Payment info | `getByTestId('payment-info-label')` |
+| Shipping info | `getByTestId('shipping-info-label')` |
+| Confirmation header | `getByTestId('complete-header')` |
+| Confirmation text | `getByTestId('complete-text')` |
+| Back to products | `getByTestId('back-to-products')` |
+| Page title | `getByTestId('title')` |
+| Cart list | `getByTestId('cart-list')` |
+| Inventory container | `getByTestId('inventory-container')` |
+| Burger menu | `getByRole('button', { name: 'Open Menu' })` |
+| Logout link | `getByTestId('logout-sidebar-link')` |
+
+> **Note:** `testIdAttribute` must be `'data-test'` in playwright.config.ts. Saucedemo uses `data-test`, not `data-testid`.

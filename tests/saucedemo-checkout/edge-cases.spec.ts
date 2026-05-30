@@ -1,42 +1,41 @@
 import { test, expect } from '@playwright/test';
 
-const APP_URL = process.env.APP_URL || 'https://www.saucedemo.com';
-const USERNAME = process.env.SAUCE_USERNAME || 'standard_user';
-const PASSWORD = process.env.SAUCE_PASSWORD || 'secret_sauce';
+// TC-018 — edge cases and boundary conditions
 
-test.describe('Edge Cases', () => {
-  test.beforeEach(async ({ page }) => {
-    await page.goto(APP_URL);
-    await page.getByTestId('username').fill(USERNAME);
-    await page.getByTestId('password').fill(PASSWORD);
-    await page.getByTestId('login-button').click();
-    await expect(page).toHaveURL(/inventory\.html/);
-  });
+test.beforeEach(async ({ page }) => {
+  await page.goto('/');
+  await page.getByTestId('username').fill('standard_user');
+  await page.getByTestId('password').fill('secret_sauce');
+  await page.getByTestId('login-button').click();
+  await page.waitForURL('**/inventory.html');
+});
 
-  test('TC-020 - P2 - Cart badge count accuracy with multiple add/remove', async ({ page }) => {
-    await page.getByTestId('add-to-cart-sauce-labs-backpack').click();
-    await expect(page.getByTestId('shopping-cart-badge')).toHaveText('1');
+test('TC-018 - P2 - Price totals math: subtotal + tax = total', async ({ page }) => {
+  await page.getByTestId('add-to-cart-sauce-labs-backpack').click();
+  await page.getByTestId('add-to-cart-sauce-labs-bike-light').click();
+  await page.getByTestId('shopping-cart-link').click();
+  await page.waitForURL('**/cart.html');
+  await page.getByTestId('checkout').click();
+  await page.waitForURL('**/checkout-step-one.html');
+  await page.getByTestId('firstName').fill('John');
+  await page.getByTestId('lastName').fill('Doe');
+  await page.getByTestId('postalCode').fill('12345');
+  await page.getByTestId('continue').click();
+  await page.waitForURL('**/checkout-step-two.html');
 
-    await page.getByTestId('add-to-cart-sauce-labs-bike-light').click();
-    await expect(page.getByTestId('shopping-cart-badge')).toHaveText('2');
+  const subtotalText = await page.getByTestId('subtotal-label').textContent() ?? '';
+  const taxText = await page.getByTestId('tax-label').textContent() ?? '';
+  const totalText = await page.getByTestId('total-label').textContent() ?? '';
 
-    await page.getByTestId('add-to-cart-sauce-labs-bolt-t-shirt').click();
-    await expect(page.getByTestId('shopping-cart-badge')).toHaveText('3');
+  const parse = (s: string) => parseFloat(s.replace(/[^0-9.]/g, ''));
+  const subtotal = parse(subtotalText);
+  const tax = parse(taxText);
+  const total = parse(totalText);
 
-    // Navigate to cart, remove Bike Light
-    await page.getByTestId('shopping-cart-link').click();
-    await page.getByTestId('remove-sauce-labs-bike-light').click();
-    await expect(page.getByTestId('shopping-cart-badge')).toHaveText('2');
-
-    // Back to inventory, remove Backpack from inventory
-    await page.getByTestId('continue-shopping').click();
-    await page.getByTestId('remove-sauce-labs-backpack').click();
-    await expect(page.getByTestId('shopping-cart-badge')).toHaveText('1');
-
-    // Only Bolt T-Shirt remains
-    await page.getByTestId('shopping-cart-link').click();
-    await expect(page.getByTestId('inventory-item-name').filter({ hasText: 'Sauce Labs Bolt T-Shirt' })).toBeVisible();
-    await expect(page.getByTestId('inventory-item-name').filter({ hasText: 'Sauce Labs Backpack' })).not.toBeVisible();
-    await expect(page.getByTestId('inventory-item-name').filter({ hasText: 'Sauce Labs Bike Light' })).not.toBeVisible();
-  });
+  expect(subtotal).toBeGreaterThan(0);
+  expect(tax).toBeGreaterThan(0);
+  expect(total).toBeGreaterThan(0);
+  // Sauce Labs Backpack $29.99 + Bike Light $9.99 = $39.98
+  expect(subtotal).toBeCloseTo(39.98, 1);
+  expect(Math.abs(subtotal + tax - total)).toBeLessThanOrEqual(0.01);
 });
