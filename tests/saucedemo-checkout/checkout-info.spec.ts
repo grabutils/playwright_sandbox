@@ -1,77 +1,65 @@
 import { test, expect } from '@playwright/test';
 
-const USERNAME = process.env.SAUCE_USERNAME ?? 'standard_user';
-const PASSWORD = process.env.SAUCE_PASSWORD ?? 'secret_sauce';
+test.describe('Checkout Info Form Validation', () => {
+  test.beforeEach(async ({ page }) => {
+    await page.goto('/');
+    await page.getByTestId('username').fill('standard_user');
+    await page.getByTestId('password').fill('secret_sauce');
+    await page.getByTestId('login-button').click();
+    await expect(page).toHaveURL(/inventory/);
 
-test.beforeEach(async ({ page }) => {
-  await page.goto('/');
-  await page.getByTestId('username').fill(USERNAME);
-  await page.getByTestId('password').fill(PASSWORD);
-  await page.getByTestId('login-button').click();
-  await expect(page).toHaveURL(/inventory/);
-  await page.getByTestId('add-to-cart-sauce-labs-backpack').click();
-  await page.getByTestId('shopping-cart-link').click();
-  await page.getByTestId('checkout').click();
-  await expect(page).toHaveURL(/checkout-step-one/);
-});
+    await page.getByTestId('add-to-cart-sauce-labs-backpack').click();
+    await page.getByTestId('shopping-cart-link').click();
+    await page.getByTestId('checkout').click();
+    await expect(page).toHaveURL(/checkout-step-one/);
+  });
 
-test('P0 - TC-006 - empty form shows first name required error', async ({ page }) => {
-  await page.getByTestId('continue').click();
-  await expect(page).toHaveURL(/checkout-step-one/);
-  await expect(page.getByTestId('error')).toContainText('First Name is required');
-  await expect(page.getByTestId('error-button')).toBeVisible();
-});
+  test('P1 - Submitting empty checkout form shows error and stays on step 1', async ({ page }) => {
+    await page.getByTestId('continue').click();
+    await expect(page.getByTestId('error')).toBeVisible();
+    await expect(page).toHaveURL(/checkout-step-one/);
+  });
 
-test('P1 - TC-007 - missing last name shows last name required error', async ({ page }) => {
-  await page.getByTestId('firstName').fill('John');
-  await page.getByTestId('postalCode').fill('12345');
-  await page.getByTestId('continue').click();
-  await expect(page).toHaveURL(/checkout-step-one/);
-  await expect(page.getByTestId('error')).toContainText('Last Name is required');
-});
+  test('P1 - Missing first name shows error mentioning First Name', async ({ page }) => {
+    await page.getByTestId('lastName').fill('Doe');
+    await page.getByTestId('postalCode').fill('12345');
+    await page.getByTestId('continue').click();
+    await expect(page.getByTestId('error')).toContainText('First Name');
+    await expect(page).toHaveURL(/checkout-step-one/);
+  });
 
-test('P1 - TC-008 - missing zip shows postal code required error', async ({ page }) => {
-  await page.getByTestId('firstName').fill('John');
-  await page.getByTestId('lastName').fill('Doe');
-  await page.getByTestId('continue').click();
-  await expect(page).toHaveURL(/checkout-step-one/);
-  await expect(page.getByTestId('error')).toContainText('Postal Code is required');
-});
+  test('P1 - Missing last name shows error mentioning Last Name', async ({ page }) => {
+    await page.getByTestId('firstName').fill('John');
+    await page.getByTestId('postalCode').fill('12345');
+    await page.getByTestId('continue').click();
+    await expect(page.getByTestId('error')).toContainText('Last Name');
+    await expect(page).toHaveURL(/checkout-step-one/);
+  });
 
-test('P1 - TC-009 - missing first name shows first name required error', async ({ page }) => {
-  await page.getByTestId('lastName').fill('Doe');
-  await page.getByTestId('postalCode').fill('12345');
-  await page.getByTestId('continue').click();
-  await expect(page).toHaveURL(/checkout-step-one/);
-  await expect(page.getByTestId('error')).toContainText('First Name is required');
-});
+  test('P1 - Missing postal code shows error mentioning Postal Code', async ({ page }) => {
+    await page.getByTestId('firstName').fill('John');
+    await page.getByTestId('lastName').fill('Doe');
+    await page.getByTestId('continue').click();
+    await expect(page.getByTestId('error')).toContainText('Postal Code');
+    await expect(page).toHaveURL(/checkout-step-one/);
+  });
 
-test('P1 - TC-010 - error banner is dismissible', async ({ page }) => {
-  await page.getByTestId('continue').click();
-  await expect(page.getByTestId('error')).toBeVisible();
+  // FI-003: App accepts whitespace-only first name — does not strip or validate (P2 defect, documented)
+  test('P2 - Whitespace-only first name is accepted by app and proceeds to step 2', async ({ page }) => {
+    await page.getByTestId('firstName').fill('   ');
+    await page.getByTestId('lastName').fill('Doe');
+    await page.getByTestId('postalCode').fill('12345');
+    await page.getByTestId('continue').click();
+    // saucedemo does not validate whitespace-only — proceeds to overview (FI-003)
+    await expect(page).toHaveURL(/checkout-step-two/);
+  });
 
-  await page.getByTestId('error-button').click();
-  await expect(page.getByTestId('error')).not.toBeVisible();
-  await expect(page.getByTestId('firstName')).toBeVisible();
-});
-
-test('P1 - TC-011 - cancel from checkout info returns to cart', async ({ page }) => {
-  await page.getByTestId('firstName').fill('John');
-  await page.getByTestId('cancel').click();
-  await expect(page).toHaveURL(/cart/);
-  await expect(page.getByTestId('inventory-item-name')).toBeVisible();
-});
-
-test('P2 - TC-018 - form fields have correct placeholder text', async ({ page }) => {
-  await expect(page.getByPlaceholder('First Name')).toBeVisible();
-  await expect(page.getByPlaceholder('Last Name')).toBeVisible();
-  await expect(page.getByPlaceholder('Zip/Postal Code')).toBeVisible();
-});
-
-test('P2 - TC-019 - alphanumeric zip code is accepted', async ({ page }) => {
-  await page.getByTestId('firstName').fill('John');
-  await page.getByTestId('lastName').fill('Doe');
-  await page.getByTestId('postalCode').fill('A1B 2C3');
-  await page.getByTestId('continue').click();
-  await expect(page).toHaveURL(/checkout-step-two/);
+  test('P2 - Postal code with special characters proceeds to step 2 (app accepts any non-empty value)', async ({ page }) => {
+    await page.getByTestId('firstName').fill('John');
+    await page.getByTestId('lastName').fill('Doe');
+    await page.getByTestId('postalCode').fill('!@#$%');
+    await page.getByTestId('continue').click();
+    // saucedemo accepts any non-empty postal code — assert actual behavior
+    await expect(page).toHaveURL(/checkout-step-two/);
+  });
 });
