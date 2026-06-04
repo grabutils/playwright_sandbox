@@ -13,8 +13,8 @@ async function login(page: Page): Promise<void> {
 
 test.describe('Happy Path Checkout', () => {
 
-  // TC-001: Full happy-path checkout with a single item
-  test('TC-001: Full happy-path checkout with a single item', async ({ page }) => {
+  // TC-003: Full happy-path checkout with a single item
+  test('TC-003: Full happy-path checkout with a single item', async ({ page }) => {
     // Step 1: Launch the application and log in with valid credentials
     // Expected: User is logged in and lands on the Products page
     await login(page);
@@ -84,8 +84,8 @@ test.describe('Happy Path Checkout', () => {
     await expect(page.getByTestId('shopping-cart-badge')).not.toBeVisible();
   });
 
-  // TC-002: Full happy-path checkout with two items
-  test('TC-002: Full happy-path checkout with two items', async ({ page }) => {
+  // TC-004: Full happy-path checkout with two items
+  test('TC-004: Full happy-path checkout with two items', async ({ page }) => {
     // Step 1: Launch the application and log in with valid credentials
     // Expected: User is logged in and lands on the Products page
     await login(page);
