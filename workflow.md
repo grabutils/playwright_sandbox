@@ -43,22 +43,26 @@ await expect(page.getByText("Thank you for your order!")).toBeVisible();
 await expect(subtotal).toBeVisible();
 ```
 
-## Commit & Pull Request (via GitHub MCP)
+## Commit & Pull Request
 
 After the test file is generated, follow these steps in order:
 
-### Step 1 — Commit (via GitHub MCP)
+### Step 1 — Local Commit (git)
 
-1. **Create a new branch** named `feat/playwright-tests-<timestamp>` or a descriptive name based on the test cases.
-2. **Commit the generated spec file** using the GitHub MCP with a conventional commit message, e.g.:
+1. **Stage and commit the generated spec file** to the current local branch using a conventional commit message, e.g.:
    `feat: add Playwright automation tests for <feature/module name>`
+2. Verify the commit was created locally with `git log --oneline -3` before proceeding.
 
-### Step 2 — Pull Request (via GitHub MCP)
+### Step 2 — Push (via GitHub MCP)
+
+1. **Push the committed file** to the remote branch using the GitHub MCP `push_files` tool, using the same commit message as Step 1.
+
+### Step 3 — Pull Request (via GitHub MCP)
 
 1. **Create a pull request** using the GitHub MCP `create_pull_request` tool with:
    - **Title**: `feat: Playwright Test Automation – <feature/module name>`
    - **Base branch**: `main` (or the default branch of the repository)
-   - **Head branch**: the newly created feature branch
+   - **Head branch**: the current working branch
    - **Body** including:
      - Summary of test cases automated
      - Assumptions made during automation
