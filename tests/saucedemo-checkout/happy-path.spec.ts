@@ -1,130 +1,117 @@
 import { test, expect, Page } from '@playwright/test';
 
-const BASE_URL = 'https://www.saucedemo.com';
+const CREDENTIALS = { username: 'standard_user', password: 'secret_sauce' };
 
-async function login(page: Page): Promise<void> {
-  await page.goto(BASE_URL);
-  await page.locator('[data-test="username"]').fill('standard_user');
-  await page.locator('[data-test="password"]').fill('secret_sauce');
-  await page.locator('[data-test="login-button"]').click();
-  // Step 1 expected result: user lands on Products page
-  await expect(page).toHaveURL(`${BASE_URL}/inventory.html`);
-  await expect(page.locator('[data-test="title"]')).toHaveText('Products');
+async function login(page: Page) {
+  await page.goto('/');
+  await page.getByTestId('username').fill(CREDENTIALS.username);
+  await page.getByTestId('password').fill(CREDENTIALS.password);
+  await page.getByTestId('login-button').click();
+  await expect(page).toHaveURL(/inventory\.html/);
 }
 
-test.describe('Happy Path Checkout', () => {
-
+test.describe('Checkout Happy Path', () => {
   // TC-003: Full happy-path checkout with a single item
-  test('TC-003: Checkout single item - Sauce Labs Backpack', async ({ page }) => {
-    // Step 1: Login with valid credentials
+  test('TC-003: Single item checkout - Sauce Labs Backpack', async ({ page }) => {
+    // Step 1: Launch and log in with valid credentials
     await login(page);
+    await expect(page.getByText('Products')).toBeVisible();
 
-    // Step 2: Add Sauce Labs Backpack to cart
-    await page.locator('[data-test="add-to-cart-sauce-labs-backpack"]').click();
-    // Expected: cart badge shows count 1
-    await expect(page.locator('[data-test="shopping-cart-badge"]')).toHaveText('1');
+    // Step 2: Click Add to cart for the Sauce Labs Backpack
+    await page.getByTestId('add-to-cart-sauce-labs-backpack').click();
+    // Cart badge shows count 1
+    await expect(page.getByTestId('shopping-cart-badge')).toHaveText('1');
 
-    // Step 3: Click cart icon
-    await page.locator('[data-test="shopping-cart-link"]').click();
-    // Expected: Cart page opens with Sauce Labs Backpack as the only item
-    await expect(page).toHaveURL(`${BASE_URL}/cart.html`);
+    // Step 3: Click the cart icon — Cart page opens showing only the Backpack
+    await page.getByTestId('shopping-cart-link').click();
+    await expect(page).toHaveURL(/cart\.html/);
     await expect(page.getByText('Sauce Labs Backpack')).toBeVisible();
-    await expect(page.locator('[data-test="cart-item"]')).toHaveCount(1);
+    await expect(page.locator('.cart_item')).toHaveCount(1);
 
-    // Step 4: Click Checkout
-    await page.locator('[data-test="checkout"]').click();
-    // Expected: Your Information page opens
-    await expect(page).toHaveURL(`${BASE_URL}/checkout-step-one.html`);
+    // Step 4: Click the Checkout button — Your Information page opens
+    await page.getByTestId('checkout').click();
+    await expect(page).toHaveURL(/checkout-step-one\.html/);
+    await expect(page.getByText('Checkout: Your Information')).toBeVisible();
 
-    // Steps 5-7: Enter customer information
-    // Step 5: First Name
-    await page.locator('[data-test="firstName"]').fill('John');
-    // Step 6: Last Name
-    await page.locator('[data-test="lastName"]').fill('Doe');
-    // Step 7: Postal Code
-    await page.locator('[data-test="postalCode"]').fill('12345');
+    // Steps 5–7: Enter First Name, Last Name, Postal Code
+    await page.getByTestId('firstName').fill('John');   // Step 5
+    await page.getByTestId('lastName').fill('Doe');     // Step 6
+    await page.getByTestId('postalCode').fill('12345'); // Step 7
 
-    // Step 8: Click Continue
-    await page.locator('[data-test="continue"]').click();
-    // Expected: Checkout Overview page opens
-    await expect(page).toHaveURL(`${BASE_URL}/checkout-step-two.html`);
+    // Step 8: Click Continue — Checkout Overview page opens
+    await page.getByTestId('continue').click();
+    await expect(page).toHaveURL(/checkout-step-two\.html/);
+    await expect(page.getByText('Checkout: Overview')).toBeVisible();
 
-    // Step 9: Verify subtotal is displayed
-    await expect(page.locator('[data-test="subtotal-label"]')).toBeVisible();
+    // Step 9: Subtotal is displayed
+    await expect(page.getByTestId('subtotal-label')).toBeVisible();
 
-    // Step 10: Verify tax is displayed
-    await expect(page.locator('[data-test="tax-label"]')).toBeVisible();
+    // Step 10: Tax is displayed
+    await expect(page.getByTestId('tax-label')).toBeVisible();
 
-    // Step 11: Verify order total is displayed
-    await expect(page.locator('[data-test="total-label"]')).toBeVisible();
+    // Step 11: Order total is displayed
+    await expect(page.getByTestId('total-label')).toBeVisible();
 
-    // Step 12: Click Finish
-    await page.locator('[data-test="finish"]').click();
-    // Expected: Order Confirmation page opens
-    await expect(page).toHaveURL(`${BASE_URL}/checkout-complete.html`);
+    // Step 12: Click Finish — Order Confirmation page opens
+    await page.getByTestId('finish').click();
+    await expect(page).toHaveURL(/checkout-complete\.html/);
 
-    // Step 13: Verify confirmation heading
+    // Step 13: Confirmation heading reads "Thank you for your order!"
     await expect(page.getByRole('heading', { name: 'Thank you for your order!' })).toBeVisible();
 
-    // Step 14: Verify confirmation message
+    // Step 14: Confirmation message is displayed below the heading
     await expect(page.getByText('Your order has been dispatched, and will arrive just as fast as the pony can get there!')).toBeVisible();
 
-    // Step 15: Verify Back Home button is visible (button label in app is "Back Home")
-    await expect(page.locator('[data-test="back-to-products"]')).toBeVisible();
+    // Step 15: Back to Products button is visible and clickable
+    await expect(page.getByTestId('back-to-products')).toBeVisible();
 
-    // Step 16: Verify cart badge is no longer visible (cart cleared)
-    await expect(page.locator('[data-test="shopping-cart-badge"]')).not.toBeVisible();
+    // Step 16: Cart badge is gone — cart has been cleared
+    await expect(page.getByTestId('shopping-cart-badge')).not.toBeVisible();
   });
 
   // TC-004: Full happy-path checkout with two items
-  test('TC-004: Checkout two items - Sauce Labs Backpack + Bike Light', async ({ page }) => {
-    // Step 1: Login with valid credentials
+  test('TC-004: Two-item checkout - Sauce Labs Backpack + Bike Light', async ({ page }) => {
+    // Step 1: Launch and log in with valid credentials
     await login(page);
+    await expect(page.getByText('Products')).toBeVisible();
 
-    // Step 2: Add Sauce Labs Backpack to cart
-    await page.locator('[data-test="add-to-cart-sauce-labs-backpack"]').click();
-    // Expected: cart badge shows count 1
-    await expect(page.locator('[data-test="shopping-cart-badge"]')).toHaveText('1');
+    // Step 2: Add Sauce Labs Backpack — badge shows 1
+    await page.getByTestId('add-to-cart-sauce-labs-backpack').click();
+    await expect(page.getByTestId('shopping-cart-badge')).toHaveText('1');
 
-    // Step 3: Add Sauce Labs Bike Light to cart
-    await page.locator('[data-test="add-to-cart-sauce-labs-bike-light"]').click();
-    // Expected: cart badge updates to count 2
-    await expect(page.locator('[data-test="shopping-cart-badge"]')).toHaveText('2');
+    // Step 3: Add Sauce Labs Bike Light — badge updates to 2
+    await page.getByTestId('add-to-cart-sauce-labs-bike-light').click();
+    await expect(page.getByTestId('shopping-cart-badge')).toHaveText('2');
 
-    // Step 4: Click cart icon, verify both items
-    await page.locator('[data-test="shopping-cart-link"]').click();
-    // Expected: Cart page opens displaying both items
-    await expect(page).toHaveURL(`${BASE_URL}/cart.html`);
+    // Step 4: Click cart icon — Cart page shows both items
+    await page.getByTestId('shopping-cart-link').click();
+    await expect(page).toHaveURL(/cart\.html/);
     await expect(page.getByText('Sauce Labs Backpack')).toBeVisible();
     await expect(page.getByText('Sauce Labs Bike Light')).toBeVisible();
 
-    // Step 5: Click Checkout
-    await page.locator('[data-test="checkout"]').click();
-    // Expected: Your Information page opens
-    await expect(page).toHaveURL(`${BASE_URL}/checkout-step-one.html`);
+    // Step 5: Click Checkout — Your Information page opens
+    await page.getByTestId('checkout').click();
+    await expect(page).toHaveURL(/checkout-step-one\.html/);
 
-    // Step 6: Enter Jane Smith / 90210 and click Continue
-    await page.locator('[data-test="firstName"]').fill('Jane');
-    await page.locator('[data-test="lastName"]').fill('Smith');
-    await page.locator('[data-test="postalCode"]').fill('90210');
-    await page.locator('[data-test="continue"]').click();
-    // Expected: Checkout Overview page opens
-    await expect(page).toHaveURL(`${BASE_URL}/checkout-step-two.html`);
+    // Step 6: Enter Jane, Smith, 90210 then Continue — Overview page opens
+    await page.getByTestId('firstName').fill('Jane');
+    await page.getByTestId('lastName').fill('Smith');
+    await page.getByTestId('postalCode').fill('90210');
+    await page.getByTestId('continue').click();
+    await expect(page).toHaveURL(/checkout-step-two\.html/);
 
-    // Step 7: Verify both item names are listed in the order overview
+    // Step 7: Both item names are listed in the order overview
     await expect(page.getByText('Sauce Labs Backpack')).toBeVisible();
     await expect(page.getByText('Sauce Labs Bike Light')).toBeVisible();
 
-    // Step 8: Click Finish
-    await page.locator('[data-test="finish"]').click();
-    // Expected: Order Confirmation page opens
-    await expect(page).toHaveURL(`${BASE_URL}/checkout-complete.html`);
+    // Step 8: Click Finish — Order Confirmation page opens
+    await page.getByTestId('finish').click();
+    await expect(page).toHaveURL(/checkout-complete\.html/);
 
-    // Step 9: Verify confirmation heading
+    // Step 9: Confirmation heading reads "Thank you for your order!"
     await expect(page.getByRole('heading', { name: 'Thank you for your order!' })).toBeVisible();
 
-    // Step 10: Verify cart badge is no longer visible (cart cleared)
-    await expect(page.locator('[data-test="shopping-cart-badge"]')).not.toBeVisible();
+    // Step 10: Cart badge is gone — cart has been cleared
+    await expect(page.getByTestId('shopping-cart-badge')).not.toBeVisible();
   });
-
 });
