@@ -6,7 +6,7 @@ node_modules/
 /playwright/.cache/
 /playwright/.auth/
 .auth/state.json
-
+.playwright-mcp/
 # Extent-style HTML report (generated, not committed)
 extent-report/
 
