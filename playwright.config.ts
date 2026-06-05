@@ -24,7 +24,16 @@ export default defineConfig({
   projects: [
     {
       name: "chromium",
-      use: { ...devices["Desktop Chrome"] },
+      use: {
+        ...devices["Desktop Chrome"],
+        launchOptions: {
+          args: [
+            "--disable-features=PasswordLeakDetection",
+            "--password-store=basic",
+            "--use-mock-keychain",
+          ],
+        },
+      },
       testMatch: /saucedemo-checkout\/.*\.spec\.ts/,
     },
   ],
