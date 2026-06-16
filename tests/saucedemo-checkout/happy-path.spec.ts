@@ -1,12 +1,9 @@
-import { test, expect } from '@playwright/test';
+import { test, expect, Page } from '@playwright/test';
 
-const USERNAME = 'standard_user';
-const PASSWORD = 'secret_sauce';
-
-async function login(page: any) {
+async function login(page: Page): Promise<void> {
   await page.goto('/');
-  await page.getByTestId('username').fill(USERNAME);
-  await page.getByTestId('password').fill(PASSWORD);
+  await page.getByTestId('username').fill('standard_user');
+  await page.getByTestId('password').fill('secret_sauce');
   await page.getByTestId('login-button').click();
   await expect(page).toHaveURL(/inventory/);
 }
