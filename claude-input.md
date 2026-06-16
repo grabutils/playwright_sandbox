@@ -1,4 +1,4 @@
-# Playwright Test Generation Prompt
+﻿# Playwright Test Generation Prompt
 
 ## Jira Configuration
 
@@ -12,75 +12,21 @@ Your task is to generate Playwright TypeScript test scripts by using Playwright 
 
 ## Steps
 
-> **Step Display Requirement:** At the **top of every response message** during the workflow, output the current agent and step banner so it is always visible without scrolling. Use this format (Agent as a heading, Step as a smaller sub-heading, each on its own line):
-> `---`
-> `### 📋 Agent: <Agent Name>`
-> `##### 🔄 Step N: <Step Name>`
-> `---`
->
-> Repeat this banner at the top of **every reply** for the duration of that step — not just once at the start of the step.
+1. Fetch and analyze all test cases from the Jira issue specified above using the Jira MCP.
+2. Launch the application using Playwright MCP.
+3. Explore the application flow required for the test cases.
+4. Identify stable locators using:
+   - getByRole()
+   - getByLabel()
+   - getByText()
+   - data-testid attributes
 
-### Agent: Story Reader
-
-#### Step 1: Reading Test Cases from Jira
-
-Output:
-`📋 Agent: Story Reader`
-`🔄 Step 1: Reading Test Cases from Jira`
-Fetch and analyze all test cases from the Jira issue specified above using the Jira MCP.
-
-### Agent: Test Architect
-
-#### Step 2: Launching Application
-
-Output:
-`📋 Agent: Test Architect`
-`🔄 Step 2: Launching Application`
-Launch the application using Playwright MCP.
-
-### Agent: Test Architect
-
-#### Step 3: Exploring Application Flow
-
-Output: `📋 Agent: Test Architect` `🔄 Step 3: Exploring Application Flow`
-Explore the application flow required for the test cases.
-
-### Agent: Test Architect
-
-#### Step 4: Identifying Locators
-
-Output: `📋 Agent: Test Architect` `🔄 Step 4: Identifying Locators`
-Identify stable locators using:
-
-- getByRole()
-- getByLabel()
-- getByText()
-- data-testid attributes
-
-### Agent: Test Architect
-
-#### Step 5: Generating Playwright Tests
-
-Output: `📋 Agent: Test Architect` `🔄 Step 5: Generating Playwright Tests`
-Generate Playwright tests for each test case.
-
-### Agent: Test Architect
-
-#### Step 6: Adding Assertions
-
-Output: `📋 Agent: Test Architect` `🔄 Step 6: Adding Assertions`
-Convert every expected result into a Playwright assertion.
-
-> - Avoid hardcoded waits (`waitForTimeout`).
-> - Use Playwright best practices and auto-waiting features.
-> - Keep the implementation simple and suitable for a POC.
-
-### Agent: Pipeline Orchestration Agent
-
-#### Step 10: Committing and Creating Pull Request
-
-Output: `📋 Agent: Pipeline Orchestration Agent`🔄 Step 10: Committing and Creating Pull Request`
-After coding is complete, use the **GitHub MCP** to commit and create a pull request.
+5. Generate Playwright tests for each test case.
+6. Convert every expected result into a Playwright assertion.
+7. Avoid hardcoded waits (`waitForTimeout`).
+8. Use Playwright best practices and auto-waiting features.
+9. Keep the implementation simple and suitable for a POC.
+10. After coding is complete, use the **GitHub MCP** to commit and create a pull request.
 
 ## Test Generation Requirements
 
@@ -107,11 +53,7 @@ await expect(subtotal).toBeVisible();
 
 After the test file is generated, follow these steps in order:
 
-### Agent: Pipeline Orchestration Agent
-
-#### Step 7 — Local Commit (git)
-
-> Output: `📋 Agent: Pipeline Orchestration Agent` `🔄 Step 7: Creating Local Commit`
+### Step 1 â€” Local Commit (git)
 
 1. **Stage and commit the generated spec file** to the current local branch using a conventional commit message, e.g.:
    `feat: add Playwright automation tests for <feature/module name>`
@@ -119,22 +61,14 @@ After the test file is generated, follow these steps in order:
    - Set author explicitly: `git commit --author="Hemanth <hemaanth01@gmail.com>" -m "<message>"`
 2. Verify the commit was created locally with `git log --oneline -3` before proceeding.
 
-### Agent: Pipeline Orchestration Agent
+### Step 2 â€” Push (via GitHub MCP)
 
-#### Step 8 — Push (via GitHub MCP)
+1. **Push the committed file** to the remote branch using the GitHub MCP `push_files` tool, using the same commit message as Step 1.
 
-> Output: `📋 Agent: Pipeline Orchestration Agent` `🔄 Step 8: Pushing to Remote Branch`
-
-1. **Push the committed file** to the remote branch using the GitHub MCP `push_files` tool, using the same commit message as Step 7.
-
-### Agent: Pipeline Orchestration Agent
-
-#### Step 9 — Pull Request (via GitHub MCP)
-
-> Output: `📋 Agent: Pipeline Orchestration Agent` `🔄 Step 9: Creating Pull Request`
+### Step 3 â€” Pull Request (via GitHub MCP)
 
 1. **Create a pull request** using the GitHub MCP `create_pull_request` tool with:
-   - **Title**: `feat: Playwright Test Automation – <feature/module name>`
+   - **Title**: `feat: Playwright Test Automation â€“ <feature/module name>`
    - **Base branch**: `main` (or the default branch of the repository)
    - **Head branch**: the current working branch
    - **Body** including:
@@ -144,27 +78,21 @@ After the test file is generated, follow these steps in order:
      - Locator recommendations for improving test stability
 2. Assign reviewers if applicable using the GitHub MCP `request_reviewers` tool.
 
-### Agent: Feedback Loop Agent
+### Step 4 â€” Wait for CI and Post Results to Jira
 
-#### Step 10 — Wait for CI and Post Results to Jira
-
-> Output: `📋 Agent:Feedback Loop Agent 🔄 Step 10: Waiting for CI and Posting Results to Jira`
-
-> **Important:** The GitHub MCP `get_pull_request_status` tool only reads legacy commit statuses — it does **not** reflect GitHub Actions results. Do **not** rely on it to determine CI outcome. Use the check-runs API described below instead.
+> **Important:** The GitHub MCP `get_pull_request_status` tool only reads legacy commit statuses â€” it does **not** reflect GitHub Actions results. Do **not** rely on it to determine CI outcome. Use the check-runs API described below instead.
 
 1. After the PR is created, extract the **head SHA** from the `create_pull_request` response (`head.sha`).
 
 2. Query the check-runs API using `curl` (the `gh` CLI is not available in this environment):
-
    ```
    curl -s -H "Accept: application/vnd.github+json" \
      "https://api.github.com/repos/{owner}/{repo}/commits/{sha}/check-runs"
    ```
-
    Replace `{owner}`, `{repo}`, and `{sha}` with the actual values.
 
 3. Inspect the JSON response:
-   - If **any** check run has `"status": "in_progress"` or `"status": "queued"`, CI is still running — call the same `curl` command again (do **not** use `sleep` loops or chained shell commands; issue a new Bash tool call each time).
+   - If **any** check run has `"status": "in_progress"` or `"status": "queued"`, CI is still running â€” call the same `curl` command again (do **not** use `sleep` loops or chained shell commands; issue a new Bash tool call each time).
    - Repeat until **all** check runs show `"status": "completed"`.
 
 4. Once all checks are completed, collect:
@@ -173,20 +101,19 @@ After the test file is generated, follow these steps in order:
    - GitHub Actions run URL (from `"html_url"` on each check run)
 
 5. Use the **Jira MCP** (`jira_add_comment`) to post a comment on the Jira issue identified by the **Jira Issue ID** at the top of this file (`KAN-4`) with the following content:
-   - CI status: ✅ PASSED or ❌ FAILED
+   - CI status: âœ… PASSED or âŒ FAILED
    - List of check names and their individual pass/fail outcome
    - GitHub Actions run URL
    - PR URL
 
 Example Jira comment format:
-
 ```
-🤖 GitHub Actions CI Results – <PR Title>
+ðŸ¤– GitHub Actions CI Results â€“ <PR Title>
 
-Status: ✅ PASSED / ❌ FAILED
+Status: âœ… PASSED / âŒ FAILED
 
 Checks:
-- Playwright Tests: ✅ success
+- Playwright Tests: âœ… success
 
 PR: [<PR Title>](<PR URL>)
 Run: [View CI Run](<GitHub Actions run URL>)
@@ -207,3 +134,12 @@ Return:
 After execution, test artifacts and results should be generated into folders such as `test-results/`, `playwright-report/`, and `extent-report/`.
 
 Generate executable Playwright code only after inspecting the application with Playwright MCP. If a locator cannot be confidently identified, explain the assumption and provide the best available locator.
+
+
+======================================================
+USER PROMPT
+======================================================
+
+$output = & claude `    -p "Read workflow.md and execute its instructions. Then process prompt.md."`
+2>&1
+

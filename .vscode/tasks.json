@@ -2,27 +2,24 @@
   "version": "2.0.0",
   "tasks": [
     {
-      "label": "Run 4-Agent QA Mesh",
+      "label": "Run Claude Prompt",
       "type": "shell",
-      "command": "powershell",
-      "args": [
-        "-ExecutionPolicy",
-        "Bypass",
-        "-File",
-        "${workspaceFolder}/.vscode/run-agents.ps1"
-      ],
+      "command": "Get-Content prompt.md | & 'C:\\Users\\hemaa\\.local\\bin\\claude.exe' -p --verbose",
+      "shell": {
+        "executable": "powershell.exe",
+        "args": ["-NoProfile", "-Command"]
+      },
       "presentation": {
         "reveal": "always",
         "panel": "new",
         "focus": true,
-        "echo": true,
         "clear": true
       },
-      "problemMatcher": [],
       "group": {
         "kind": "build",
         "isDefault": true
-      }
+      },
+      "problemMatcher": []
     }
   ]
 }

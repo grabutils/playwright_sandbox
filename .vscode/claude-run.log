@@ -1,0 +1,31 @@
+﻿**********************
+Windows PowerShell transcript start
+Start time: 20260605222224
+Username: LAPTOP-LETO9F39\hemaa
+RunAs User: LAPTOP-LETO9F39\hemaa
+Configuration Name: 
+Machine: LAPTOP-LETO9F39 (Microsoft Windows NT 10.0.26100.0)
+Host Application: C:\WINDOWS\System32\WindowsPowerShell\v1.0\powershell.exe -ExecutionPolicy Bypass -File .vscode\run-agent1.ps1
+Process ID: 38860
+PSVersion: 5.1.26100.7705
+PSEdition: Desktop
+PSCompatibleVersions: 1.0, 2.0, 3.0, 4.0, 5.0, 5.1.26100.7705
+BuildVersion: 10.0.26100.7705
+CLRVersion: 4.0.30319.42000
+WSManStackVersion: 3.0
+PSRemotingProtocolVersion: 2.3
+SerializationVersion: 1.1.0.1
+**********************
+Transcript started, output file is C:\Users\hemaa\Documents\AgenticAI_QA_Workflow_Example\.vscode\claude-run.log
+C:\Users\hemaa\Documents\AgenticAI_QA_Workflow_Example\.vscode\run-agent1.ps1 : prompt.md not found.
+    + CategoryInfo          : NotSpecified: (:) [Write-Error], WriteErrorException
+    + FullyQualifiedErrorId : Microsoft.PowerShell.Commands.WriteErrorException,run-agent1.ps1
+C:\Users\hemaa\Documents\AgenticAI_QA_Workflow_Example\.vscode\run-agent1.ps1 : prompt.md not
+found.
+    + CategoryInfo          : NotSpecified: (:) [Write-Error], WriteErrorException
+    + FullyQualifiedErrorId : Microsoft.PowerShell.Commands.WriteErrorException,run-agent1.ps1
+
+**********************
+Windows PowerShell transcript end
+End time: 20260605222224
+**********************

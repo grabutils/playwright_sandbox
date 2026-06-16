@@ -1,0 +1,42 @@
+﻿**********************
+Windows PowerShell transcript start
+Start time: 20260605224159
+Username: LAPTOP-LETO9F39\hemaa
+RunAs User: LAPTOP-LETO9F39\hemaa
+Configuration Name: 
+Machine: LAPTOP-LETO9F39 (Microsoft Windows NT 10.0.26100.0)
+Host Application: C:\WINDOWS\System32\WindowsPowerShell\v1.0\powershell.exe -ExecutionPolicy Bypass -File .\run-agent1.ps1
+Process ID: 52200
+PSVersion: 5.1.26100.7705
+PSEdition: Desktop
+PSCompatibleVersions: 1.0, 2.0, 3.0, 4.0, 5.0, 5.1.26100.7705
+BuildVersion: 10.0.26100.7705
+CLRVersion: 4.0.30319.42000
+WSManStackVersion: 3.0
+PSRemotingProtocolVersion: 2.3
+SerializationVersion: 1.1.0.1
+**********************
+Transcript started, output file is C:\Users\hemaa\Documents\AgenticAI_QA_Workflow_Example\claude-run.log
+Claude Path:
+C:\Users\hemaa\.local\bin\claude.exe
+
+Claude Version:
+
+
+Running Claude smoke test...
+Smoke Test Result:
+4
+
+Executing workflow...
+
+PS>TerminatingError(claude.exe): "The running command stopped because the preference variable "ErrorActionPreference" or common parameter is set to Stop: Error: Input must be provided either through stdin or as a prompt argument when using --print"
+
+=======================================
+               ERROR
+=======================================
+
+Error: Input must be provided either through stdin or as a prompt argument when using --print
+**********************
+Windows PowerShell transcript end
+End time: 20260605224207
+**********************
