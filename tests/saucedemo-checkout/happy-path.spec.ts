@@ -9,121 +9,143 @@ async function login(page: Page): Promise<void> {
 }
 
 test.describe('Checkout Happy Path', () => {
-
   /**
-   * TC-003: Full happy-path checkout with a single item (Sauce Labs Backpack)
-   * Note: TC-003 step 15 refers to "Back to Products" but the actual button
-   * in the app is labelled "Back Home" — asserting on the rendered label.
+   * TC-003: Full happy-path checkout with a single item
    */
-  test('TC-003: Single item checkout – Sauce Labs Backpack', async ({ page }) => {
-    // Step 1: Launch application and log in
+  test('TC-003: Single item checkout - Sauce Labs Backpack', async ({ page }) => {
+    // Step 1: Launch the application and log in with valid credentials
+    // Expected: User is logged in and lands on the Products page
     await login(page);
+    await expect(page.getByTestId('title')).toHaveText('Products');
 
-    // Step 2: Add Sauce Labs Backpack to cart
+    // Step 2: Click Add to cart for the Sauce Labs Backpack
+    // Expected: The cart icon shows a badge with the count 1
     await page.getByTestId('add-to-cart-sauce-labs-backpack').click();
-    // Expected: cart badge shows count 1
     await expect(page.getByTestId('shopping-cart-badge')).toHaveText('1');
 
-    // Step 3: Open cart
+    // Step 3: Click the cart icon in the top navigation
+    // Expected: The Cart page opens and displays the Sauce Labs Backpack as the only item
     await page.getByTestId('shopping-cart-link').click();
     await expect(page).toHaveURL(/cart/);
-    // Expected: Sauce Labs Backpack is the only item
-    await expect(page.getByText('Sauce Labs Backpack')).toBeVisible();
+    await expect(page.getByTestId('title')).toHaveText('Your Cart');
+    const cartItemNames = page.getByTestId('inventory-item-name');
+    await expect(cartItemNames).toHaveCount(1);
+    await expect(cartItemNames.first()).toHaveText('Sauce Labs Backpack');
 
-    // Step 4: Click Checkout
+    // Step 4: Click the Checkout button
+    // Expected: The Your Information page opens
     await page.getByTestId('checkout').click();
-    // Expected: Your Information page opens
     await expect(page).toHaveURL(/checkout-step-one/);
+    await expect(page.getByTestId('title')).toHaveText('Checkout: Your Information');
 
-    // Steps 5–7: Enter customer information
-    await page.getByTestId('firstName').fill('John');   // Step 5
-    await page.getByTestId('lastName').fill('Doe');     // Step 6
-    await page.getByTestId('postalCode').fill('12345'); // Step 7
+    // Steps 5-7: Enter John in First Name, Doe in Last Name, 12345 in Postal Code
+    // Expected: Fields accept the input
+    await page.getByTestId('firstName').fill('John');
+    await page.getByTestId('lastName').fill('Doe');
+    await page.getByTestId('postalCode').fill('12345');
 
-    // Step 8: Click Continue
+    // Step 8: Click the Continue button
+    // Expected: The Checkout Overview page opens showing the order summary
     await page.getByTestId('continue').click();
-    // Expected: Checkout Overview page opens
     await expect(page).toHaveURL(/checkout-step-two/);
+    await expect(page.getByTestId('title')).toHaveText('Checkout: Overview');
 
-    // Step 9: Subtotal is displayed
+    // Step 9: Verify that the subtotal amount is displayed on the overview page
+    // Expected: A subtotal with a dollar amount is visible
     await expect(page.getByTestId('subtotal-label')).toBeVisible();
+    await expect(page.getByTestId('subtotal-label')).toContainText('$');
 
-    // Step 10: Tax is displayed
+    // Step 10: Verify that the tax amount is displayed on the overview page
+    // Expected: A tax value with a dollar amount is visible
     await expect(page.getByTestId('tax-label')).toBeVisible();
+    await expect(page.getByTestId('tax-label')).toContainText('$');
 
-    // Step 11: Order total is displayed
+    // Step 11: Verify that the order total is displayed on the overview page
+    // Expected: A total with a dollar amount is visible
     await expect(page.getByTestId('total-label')).toBeVisible();
+    await expect(page.getByTestId('total-label')).toContainText('$');
 
-    // Step 12: Click Finish
+    // Step 12: Click the Finish button
+    // Expected: The Order Confirmation page opens
     await page.getByTestId('finish').click();
-    // Expected: Order Confirmation page opens
     await expect(page).toHaveURL(/checkout-complete/);
 
-    // Step 13: Confirmation heading
+    // Step 13: Verify the confirmation heading on the page
+    // Expected: The heading reads "Thank you for your order!"
     await expect(page.getByTestId('complete-header')).toHaveText('Thank you for your order!');
 
-    // Step 14: Confirmation message is displayed below the heading
+    // Step 14: Verify the confirmation message text is displayed
+    // Expected: A descriptive confirmation message is shown below the heading
     await expect(page.getByTestId('complete-text')).toBeVisible();
 
-    // Step 15: Back Home button is visible (app label; TC-003 calls it "Back to Products")
+    // Step 15: Verify the Back to Products button is visible
+    // Expected: The button is present and clickable
+    // Note: The button is labeled "Back Home" in the app but identified by data-test="back-to-products"
     await expect(page.getByTestId('back-to-products')).toBeVisible();
 
-    // Step 16: Cart badge is no longer visible — cart has been cleared
+    // Step 16: Verify the cart icon in the top navigation
+    // Expected: The cart badge is no longer visible, confirming the cart has been cleared
     await expect(page.getByTestId('shopping-cart-badge')).not.toBeVisible();
   });
 
   /**
-   * TC-004: Full happy-path checkout with multiple items
-   * (Sauce Labs Backpack + Sauce Labs Bike Light)
+   * TC-004: Multi-item checkout with two products
    */
-  test('TC-004: Multi-item checkout – Backpack + Bike Light', async ({ page }) => {
-    // Step 1: Launch application and log in
+  test('TC-004: Multi-item checkout - Sauce Labs Backpack and Bike Light', async ({ page }) => {
+    // Step 1: Launch the application and log in with valid credentials
+    // Expected: User is logged in and lands on the Products page
     await login(page);
+    await expect(page.getByTestId('title')).toHaveText('Products');
 
-    // Step 2: Add Sauce Labs Backpack to cart
+    // Step 2: Click Add to cart for the Sauce Labs Backpack
+    // Expected: The cart icon shows a badge with the count 1
     await page.getByTestId('add-to-cart-sauce-labs-backpack').click();
-    // Expected: cart badge shows count 1
     await expect(page.getByTestId('shopping-cart-badge')).toHaveText('1');
 
-    // Step 3: Add Sauce Labs Bike Light to cart
+    // Step 3: Click Add to cart for the Sauce Labs Bike Light
+    // Expected: The cart badge updates and shows the count 2
     await page.getByTestId('add-to-cart-sauce-labs-bike-light').click();
-    // Expected: cart badge updates to count 2
     await expect(page.getByTestId('shopping-cart-badge')).toHaveText('2');
 
-    // Step 4: Open cart
+    // Step 4: Click the cart icon in the top navigation
+    // Expected: The Cart page opens and displays both items
     await page.getByTestId('shopping-cart-link').click();
     await expect(page).toHaveURL(/cart/);
-    // Expected: both items are displayed
-    await expect(page.getByText('Sauce Labs Backpack')).toBeVisible();
-    await expect(page.getByText('Sauce Labs Bike Light')).toBeVisible();
+    await expect(page.getByTestId('title')).toHaveText('Your Cart');
+    const cartItems = page.getByTestId('inventory-item-name');
+    await expect(cartItems).toHaveCount(2);
 
-    // Step 5: Click Checkout
+    // Step 5: Click the Checkout button
+    // Expected: The Your Information page opens
     await page.getByTestId('checkout').click();
-    // Expected: Your Information page opens
     await expect(page).toHaveURL(/checkout-step-one/);
 
-    // Step 6: Enter customer information and continue
+    // Step 6: Enter Jane in First Name, Smith in Last Name, 90210 in Postal Code, Click Continue
+    // Expected: The Checkout Overview page opens showing the order summary
     await page.getByTestId('firstName').fill('Jane');
     await page.getByTestId('lastName').fill('Smith');
     await page.getByTestId('postalCode').fill('90210');
     await page.getByTestId('continue').click();
-    // Expected: Checkout Overview page opens
     await expect(page).toHaveURL(/checkout-step-two/);
+    await expect(page.getByTestId('title')).toHaveText('Checkout: Overview');
 
-    // Step 7: Both item names are listed in the order overview
-    await expect(page.getByText('Sauce Labs Backpack')).toBeVisible();
-    await expect(page.getByText('Sauce Labs Bike Light')).toBeVisible();
+    // Step 7: Verify that both item names are listed in the order overview
+    // Expected: Sauce Labs Backpack and Sauce Labs Bike Light are both visible in the summary
+    const overviewItems = page.getByTestId('inventory-item-name');
+    await expect(overviewItems.filter({ hasText: 'Sauce Labs Backpack' })).toBeVisible();
+    await expect(overviewItems.filter({ hasText: 'Sauce Labs Bike Light' })).toBeVisible();
 
-    // Step 8: Click Finish
+    // Step 8: Click the Finish button
+    // Expected: The Order Confirmation page opens
     await page.getByTestId('finish').click();
-    // Expected: Order Confirmation page opens
     await expect(page).toHaveURL(/checkout-complete/);
 
-    // Step 9: Confirmation heading
+    // Step 9: Verify the confirmation heading on the page
+    // Expected: The heading reads "Thank you for your order!"
     await expect(page.getByTestId('complete-header')).toHaveText('Thank you for your order!');
 
-    // Step 10: Cart badge is no longer visible — cart has been cleared
+    // Step 10: Verify the cart icon in the top navigation
+    // Expected: The cart badge is no longer visible, confirming the cart has been cleared
     await expect(page.getByTestId('shopping-cart-badge')).not.toBeVisible();
   });
-
 });
